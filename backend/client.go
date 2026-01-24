@@ -21,6 +21,7 @@ type Client struct {
 	lobbyRead  chan ClientLobbyMessage
 
 	unregister chan *Client
+	words      []string
 
 	// room things
 	done   bool
@@ -28,6 +29,12 @@ type Client struct {
 }
 
 func (c *Client) readPump() {
+	waitingForSpace := false
+
+	// typing state
+	idx := 0     // index into word list
+	wordIdx := 0 // index into current word
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 
@@ -59,6 +66,47 @@ func (c *Client) readPump() {
 		c.log("received client message: %d %T",
 			clientMessage.Opcode(), clientMessage)
 
+		switch clientMessage := clientMessage.(type) {
+		case *PowerupPurchaseMessage:
+		case *RegisterMessage:
+
+		case *SkipWaitMessage:
+			c.lobbyRead <- ClientLobbySkipWait{}
+
+		case *SubmissionMessage:
+			answerCharacter := clientMessage.Answer
+
+			if waitingForSpace {
+				if answerCharacter == ' ' {
+					wordIdx = 0
+					idx++
+					c.lobbyRead <- ClientLobbyProgressUpdate{
+						clientId: c.id,
+						idx:      idx,
+					}
+					waitingForSpace = false
+				}
+				continue
+			}
+
+			// correct letter
+			if answerCharacter == c.words[idx][wordIdx] {
+				wordIdx++
+
+				// finished test
+				if wordIdx == len(c.words[idx]) && idx == len(c.words) {
+					c.lobbyRead <- ClientLobbyFinished{
+						clientId: c.id,
+					}
+					continue
+				}
+
+				// finished word
+				if wordIdx == len(c.words[idx]) {
+					waitingForSpace = true
+				}
+			}
+		}
 	}
 
 	c.log("unregistering")

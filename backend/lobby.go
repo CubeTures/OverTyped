@@ -44,6 +44,8 @@ func newLobby(id int, hub *Hub) *Lobby {
 		closed: false,
 
 		hub: hub,
+
+		words: RandomWords(wordsEnglish, 100),
 	}
 
 	return l
@@ -146,6 +148,7 @@ func (l *Lobby) registerClient(c *Client, timeRemaining uint16) {
 
 	c.unregister = l.unregister
 	c.lobbyRead = l.lobbyRead
+	c.words = l.words
 
 	go c.readPump()
 
