@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 func Serve() {
 	mux := routes()
-	port := os.Getenv("LR_PORT")
+	port := os.Getenv("26_PORT")
 	if port == "" {
 		port = "8080"
 	}
@@ -24,11 +24,10 @@ func routes() *http.ServeMux {
 	fileServer := http.FileServer(http.Dir("../frontend/dist/"))
 	mux.Handle("/", fileServer)
 
-	// // hub := gamelogic.NewHub()
-	// // go hub.Run()
+	// hub := gamelogic.NewHub()
+	// go hub.Run()
 	//
 	// mux.HandleFunc("/ws", hub.ServeWs)
 
 	return mux
 }
-
