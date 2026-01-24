@@ -6,7 +6,7 @@ export function useTypingEngine(words: string[]) {
 	const [currentWord, setCurrentWord] = useState(0);
 	const [input, setInput] = useState("");
 	const [typedWords, setTypedWords] = useState(
-		words.map((w) => ({ text: w, status: "pending" as WordStatus })),
+		words.map((w) => ({ text: w, status: "pending" as WordStatus }))
 	);
 
 	const handleInput = (value: string) => {

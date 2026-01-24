@@ -8,7 +8,7 @@
 export function generateZipfSentence(
 	words: string[],
 	length: number = 12,
-	alpha: number = 1.1,
+	alpha: number = 1.1
 ): string {
 	return `this is a type test make sure to the type the fastest you possibly can to show that you are the fastest one to exist, we know you think you are fast, but you are you really faster than the best. Find out now.`;
 

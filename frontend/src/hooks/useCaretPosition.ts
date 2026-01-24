@@ -4,7 +4,7 @@ export function useCaretPosition(
 	testRef: RefObject<HTMLDivElement | null>,
 	caretRef: RefObject<HTMLDivElement | null>,
 	currentWord: number,
-	input: string,
+	input: string
 ) {
 	useLayoutEffect(() => {
 		const caret = caretRef.current;
