@@ -51,6 +51,8 @@ export type HubHello = {
 
 export type LobbyHello = {
 	opcode: typeof ServerOp.LobbyHello;
+	playerId: number;
+	timeLeft: number;
 	players: Player[];
 	words: string[];
 };
@@ -131,7 +133,7 @@ function parseWord(view: DataView, offset: number): [string, number] {
 		wordLen
 	);
 	const word = textDecoder.decode(wordBytes);
-	return [word, offset];
+	return [word, offset + wordLen];
 }
 
 // Helper: parses a player from a DataView at the given offset
@@ -171,6 +173,9 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 			return { opcode };
 
 		case ServerOp.LobbyHello: {
+			const playerId = view.getUint8(offset++);
+			const timeLeft = view.getUint16(offset);
+			offset += 2;
 			const numPlayers = view.getUint8(offset++);
 			const players = [];
 			for (let i = 0; i < numPlayers; i++) {
@@ -178,14 +183,15 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 				[parsed, offset] = parsePlayer(view, offset);
 				players.push(parsed);
 			}
-			const numWords = view.getUint8(offset++);
+			const numWords = view.getUint32(offset);
+			offset += 4;
 			const words = [];
 			for (let i = 0; i < numWords; i++) {
 				let parsed;
 				[parsed, offset] = parseWord(view, offset);
 				words.push(parsed);
 			}
-			return { players, opcode, words };
+			return { players, opcode, words, timeLeft, playerId };
 		}
 
 		case ServerOp.NewPlayer: {
