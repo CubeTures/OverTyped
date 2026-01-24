@@ -120,10 +120,11 @@ startGameLoop:
 				})
 
 			case ClientLobbyFinished:
-				activePlayers--
 				l.broadcast(PlayerFinishedMessage{
 					PlayerID: msg.clientId,
+					Placement: byte(activePlayers),
 				})
+				activePlayers--
 			}
 
 		case <-l.unregister:

@@ -153,6 +153,7 @@ func (m ProgressUpdateMessage) MarshalBinary() ([]byte, error) {
 // ---- Player Finished (Opcode 5) ----
 type PlayerFinishedMessage struct {
 	PlayerID byte
+	Placement byte
 }
 
 func (m PlayerFinishedMessage) Opcode() byte {
@@ -160,7 +161,7 @@ func (m PlayerFinishedMessage) Opcode() byte {
 }
 
 func (m PlayerFinishedMessage) MarshalBinary() ([]byte, error) {
-	return []byte{m.Opcode(), m.PlayerID}, nil
+	return []byte{m.Opcode(), m.PlayerID, m.Placement}, nil
 }
 
 // ---- Status Changed (Opcode 6) ----
