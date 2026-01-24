@@ -42,20 +42,6 @@ func (p Player) marshal(buf *bytes.Buffer) error {
 	return nil
 }
 
-type Word struct {
-	Text string
-}
-
-func (w Word) marshal(buf *bytes.Buffer) error {
-	if len(w.Text) > 255 {
-		return fmt.Errorf("word too long")
-	}
-
-	buf.WriteByte(byte(len(w.Text)))
-	buf.WriteString(w.Text)
-	return nil
-}
-
 // ---- Hub Greeting (Opcode 0) ----
 type HubGreetingMessage struct{}
 
@@ -69,9 +55,10 @@ func (m HubGreetingMessage) MarshalBinary() ([]byte, error) {
 
 // ---- Lobby Greeting (Opcode 1) ----
 type LobbyGreetingMessage struct {
-	PlayerID byte
-	Players  []Player
-	Words    []Word
+	PlayerID      byte
+	TimeRemaining uint16
+	Players       []Player
+	Words         []string
 }
 
 func (m LobbyGreetingMessage) Opcode() byte {
@@ -83,6 +70,9 @@ func (m LobbyGreetingMessage) MarshalBinary() ([]byte, error) {
 	buf.WriteByte(m.Opcode())
 
 	buf.WriteByte(m.PlayerID)
+	if err := binary.Write(&buf, binary.BigEndian, m.TimeRemaining); err != nil {
+		return nil, err
+	}
 	buf.WriteByte(byte(len(m.Players)))
 
 	for _, p := range m.Players {
@@ -96,9 +86,12 @@ func (m LobbyGreetingMessage) MarshalBinary() ([]byte, error) {
 	}
 
 	for _, w := range m.Words {
-		if err := w.marshal(&buf); err != nil {
-			return nil, err
+		if len(w) > 255 {
+			return nil, fmt.Errorf("word too long")
 		}
+
+		buf.WriteByte(byte(len(w)))
+		buf.WriteString(w)
 	}
 
 	return buf.Bytes(), nil

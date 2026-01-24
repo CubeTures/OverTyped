@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
 )
 
@@ -17,7 +16,7 @@ const (
 
 // ---- ClientMessage interface ----
 type ClientMessage interface {
-	Opcode() byte
+	Opcode() Opcode
 	UnmarshalBinary([]byte) error
 }
 
@@ -26,8 +25,8 @@ type RegisterMessage struct {
 	Name string
 }
 
-func (m *RegisterMessage) Opcode() byte {
-	return byte(OpcodeRegister)
+func (m *RegisterMessage) Opcode() Opcode {
+	return OpcodeRegister
 }
 
 func (m *RegisterMessage) UnmarshalBinary(data []byte) error {
@@ -46,19 +45,19 @@ func (m *RegisterMessage) UnmarshalBinary(data []byte) error {
 
 // ---- Submission of a letter (Opcode 1) ----
 type SubmissionMessage struct {
-	Answer rune
+	Answer byte
 }
 
-func (m *SubmissionMessage) Opcode() byte {
-	return byte(OpcodeSubmission)
+func (m *SubmissionMessage) Opcode() Opcode {
+	return OpcodeSubmission
 }
 
 func (m *SubmissionMessage) UnmarshalBinary(data []byte) error {
-	if len(data) != 4 {
-		return fmt.Errorf("submission: expected 4 bytes, got %d", len(data))
+	if len(data) != 1 {
+		return fmt.Errorf("submission: expected 1 byte, got %d", len(data))
 	}
 
-	m.Answer = rune(binary.BigEndian.Uint32(data))
+	m.Answer = data[0]
 	return nil
 }
 
@@ -68,8 +67,8 @@ type PowerupPurchaseMessage struct {
 	Affected  byte
 }
 
-func (m *PowerupPurchaseMessage) Opcode() byte {
-	return byte(OpcodePowerupPurchase)
+func (m *PowerupPurchaseMessage) Opcode() Opcode {
+	return OpcodePowerupPurchase
 }
 
 func (m *PowerupPurchaseMessage) UnmarshalBinary(data []byte) error {
@@ -85,8 +84,8 @@ func (m *PowerupPurchaseMessage) UnmarshalBinary(data []byte) error {
 // ---- Skip Wait (Opcode 3) ----
 type SkipWaitMessage struct{}
 
-func (m *SkipWaitMessage) Opcode() byte {
-	return byte(OpcodeSkipWait)
+func (m *SkipWaitMessage) Opcode() Opcode {
+	return OpcodeSkipWait
 }
 
 func (m *SkipWaitMessage) UnmarshalBinary(data []byte) error {
@@ -94,4 +93,38 @@ func (m *SkipWaitMessage) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("skip wait: expected no content, got %d bytes", len(data))
 	}
 	return nil
+}
+
+func ParseClientMessage(buf []byte) (ClientMessage, error) {
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("empty client message")
+	}
+
+	op := buf[0]
+	payload := buf[1:]
+
+	var msg ClientMessage
+
+	switch Opcode(op) {
+	case OpcodeRegister:
+		msg = &RegisterMessage{}
+
+	case OpcodeSubmission:
+		msg = &SubmissionMessage{}
+
+	case OpcodePowerupPurchase:
+		msg = &PowerupPurchaseMessage{}
+
+	case OpcodeSkipWait:
+		msg = &SkipWaitMessage{}
+
+	default:
+		return nil, fmt.Errorf("unknown client opcode: %d", op)
+	}
+
+	if err := msg.UnmarshalBinary(payload); err != nil {
+		return nil, err
+	}
+
+	return msg, nil
 }
