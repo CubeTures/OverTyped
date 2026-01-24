@@ -6,6 +6,8 @@ import type {
 	Socket,
 	StatusEffectId,
 	StartGame,
+	PlayerFinished,
+	ProgressUpdate,
 } from "./lib/comm.ts";
 import { connect as socketConnect } from "./lib/comm.ts";
 
@@ -58,6 +60,18 @@ function connect(
 		socket.event.onNewPlayer((m: NewPlayer) => {
 			setPlayers((i) => {
 				return { [m.id]: m as Player, ...i };
+			});
+		});
+		socket.event.onPlayerFinished((m: PlayerFinished) => {
+			setPlayers((i) => {
+				i[m.id].finished = true;
+				return i;
+			});
+		});
+		socket.event.onProgressUpdate((m: ProgressUpdate) => {
+			setPlayers((i) => {
+				i[m.playerId].progress = m.progress;
+				return i;
 			});
 		});
 		socket.event.OnStartGame((_: StartGame) => {

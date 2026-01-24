@@ -19,7 +19,7 @@ export type RegisterMessage = {
 
 export type SubmitMessage = {
 	opcode: typeof ClientOp.Submit;
-	answer: number;
+	key: string;
 };
 
 export type SkipWaitMessage = {
@@ -107,7 +107,8 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 			buffer = new ArrayBuffer(1 + 4); // opcode + answer
 			view = new DataView(buffer);
 			view.setUint8(0, opcode);
-			view.setInt32(1, payload.answer, false); // big endian
+			const encodedKey = textEncoder.encode(payload.key);
+			view.setUint8(1, encodedKey[0]);
 			return buffer;
 
 		case ClientOp.SkipWait:
@@ -233,10 +234,12 @@ export type Socket = {
 		onHubHello: (arg0: (arg0: HubHello) => void) => void;
 		onLobbyHello: (arg0: (arg0: LobbyHello) => void) => void;
 		onNewPlayer: (arg0: (arg0: NewPlayer) => void) => void;
+		onProgressUpdate: (arg0: (arg0: ProgressUpdate) => void) => void;
+		onPlayerFinished: (arg0: (arg0: PlayerFinished) => void) => void;
 		OnStartGame: (arg0: (arg0: StartGame) => void) => void;
 	};
 	sendRegister: (name: string) => void;
-	sendSubmit: (answer: number) => void;
+	sendSubmit: (key: string) => void;
 	sendSkip: () => void;
 };
 
@@ -280,15 +283,19 @@ async function connect_raw(url: string): Promise<Socket> {
 				callIfOpCode(handler, ServerOp.NewPlayer),
 			OnStartGame: (handler: (arg0: StartGame) => void) =>
 				callIfOpCode(handler, ServerOp.StartGame),
+			onProgressUpdate: (handler: (arg0: ProgressUpdate) => void) =>
+				callIfOpCode(handler, ServerOp.ProgressUpdate),
+			onPlayerFinished: (handler: (arg0: PlayerFinished) => void) =>
+				callIfOpCode(handler, ServerOp.PlayerFinished),
 		},
 		sendRegister: (name: string) => {
 			socket.send(
 				serializeClientMessage({ opcode: ClientOp.Register, name })
 			);
 		},
-		sendSubmit: (answer: number) => {
+		sendSubmit: (key: string) => {
 			socket.send(
-				serializeClientMessage({ opcode: ClientOp.Submit, answer })
+				serializeClientMessage({ opcode: ClientOp.Submit, key })
 			);
 		},
 		sendSkip: () => {
