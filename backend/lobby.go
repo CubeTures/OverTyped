@@ -57,10 +57,6 @@ func (l *Lobby) clientCount() int {
 
 func (l *Lobby) run() {
 	l.log("Running")
-}
-
-func (l *Lobby) log(format string, v ...any) {
-	log.Printf("lobby %d: %s", l.id, fmt.Sprintf(format, v...))
 
 	l.open = true
 
@@ -106,6 +102,8 @@ startGameLoop:
 
 	l.log("wait over, starting game")
 
+	l.broadcast(RaceStartedMessage{})
+
 	// TODO: mayhaps add game timer
 
 	for {
@@ -143,12 +141,16 @@ startGameLoop:
 	}
 }
 
+func (l *Lobby) log(format string, v ...any) {
+	log.Printf("lobby %d: %s", l.id, fmt.Sprintf(format, v...))
+
+}
+
 func (l *Lobby) registerClient(c *Client, timeRemaining uint16) {
 	l.broadcast(NewRegisteredPlayerMessage{Player{ID: c.id, Name: c.name}})
 
 	c.unregister = l.unregister
 	c.lobbyRead = l.lobbyRead
-	c.words = l.words
 
 	go c.readPump()
 
