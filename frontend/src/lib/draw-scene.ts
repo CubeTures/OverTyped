@@ -41,7 +41,7 @@ function drawScene(
 	deltaTime: number
 ) {
 	// SETTING -> if want different background, change here
-	gl.clearColor(0.5, 0.5, 0.5, 1.0); // Set Background: rgb, transparency
+	gl.clearColor(100/255, 132/255, 176/255, 1.0); // Set Background: rgb, transparency
 	gl.clearDepth(1.0); // Clear everything
 	gl.enable(gl.DEPTH_TEST); // Enable depth testing
 	gl.depthFunc(gl.LEQUAL); // Near things obscure far things

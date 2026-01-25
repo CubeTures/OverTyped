@@ -146,7 +146,7 @@ async function main(canvas: HTMLCanvasElement) {
 	actors.push({ buffers: carBuffers, type: "Car" });
 	actors[1].overrideTextureName = "002_COLOR_BASIC.png";
 	actors.push({ buffers: cubeBuffers,type:"Floor" });
-	actors[2].overrideNoTextureColor = [10, 10, 10, 255];
+	actors[2].overrideNoTextureColor = [10, 15, 15, 255];
 	actors.push({ buffers: carBuffers, type: "Car" });
 	actors.push({ buffers: carBuffers, type: "Car" });
 	actors.push({ buffers: wheelBuffer, type: "Wheel" });
