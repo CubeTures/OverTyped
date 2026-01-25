@@ -1,3 +1,5 @@
+import { Powerup } from "@/lib/comm";
+import { usePage } from "@/PageProvider";
 import { useEffect, useState } from "react";
 
 type LetterStatus = "pending" | "correct" | "incorrect";
@@ -13,6 +15,7 @@ type Props = {
 function Word({ word, isActive, status, input, offsetY }: Props) {
 	const [letterStates, setLetterStates] = useState<LetterStatus[]>([]);
 	const letters = word.split("");
+	const { players, currentPlayer } = usePage();
 
 	let className = "mx-[0.25em] relative transition-colors ";
 	// if (status === "correct") {
@@ -34,9 +37,16 @@ function Word({ word, isActive, status, input, offsetY }: Props) {
 		setLetterStates(next);
 	}, [input, isActive, word]);
 
+	const shouldHide =
+		players[currentPlayer].statusEffects.findIndex(
+			(a) => a === Powerup.Fog
+		) !== -1 &&
+		!isActive &&
+		status === "pending";
+
 	return (
 		<div
-			className={className}
+			className={`${shouldHide ? "opacity-0" : ""} ${className}`}
 			style={{ transform: `translateY(-${offsetY}px)` }}
 		>
 			{letters.map((char, i) => {
