@@ -34,7 +34,7 @@ export type RegisterMessage = {
 
 export type SubmitMessage = {
 	opcode: typeof ClientOp.Submit;
-	key: string;
+	idx: number;
 };
 
 export type SkipWaitMessage = {
@@ -159,11 +159,10 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 			return buffer;
 
 		case ClientOp.Submit:
-			buffer = new ArrayBuffer(1 + 1); // opcode + answer
+			buffer = new ArrayBuffer(1 + 4); // opcode + answer
 			view = new DataView(buffer);
 			view.setUint8(0, opcode);
-			const encodedKey = textEncoder.encode(payload.key);
-			view.setUint8(1, encodedKey[0]);
+			view.setUint32(1, payload.idx);
 			return buffer;
 
 		case ClientOp.SkipWait:
@@ -320,7 +319,7 @@ export type Socket = {
 		onUpdateWords: (arg0: (arg0: UpdateWords) => void) => void;
 	};
 	sendRegister: (name: string) => void;
-	sendSubmit: (key: string) => void;
+	sendSubmit: (idx: number) => void;
 	sendSkip: () => void;
 	sendSelect: (arg0: PowerupId[]) => void;
 	sendPurchase: (arg0: Purchase) => void;
@@ -382,9 +381,9 @@ async function connect_raw(url: string): Promise<Socket> {
 				serializeClientMessage({ opcode: ClientOp.Register, name })
 			);
 		},
-		sendSubmit: (key: string) => {
+		sendSubmit: (idx: number) => {
 			socket.send(
-				serializeClientMessage({ opcode: ClientOp.Submit, key })
+				serializeClientMessage({ opcode: ClientOp.Submit, idx })
 			);
 		},
 		sendSkip: () => {

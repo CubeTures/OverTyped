@@ -12,7 +12,7 @@ import type {
 	PowerupId,
 	UpdateWords,
 	StatusChanged,
-    Purchase,
+	Purchase,
 } from "./lib/comm.ts";
 import { connect as socketConnect } from "./lib/comm.ts";
 
