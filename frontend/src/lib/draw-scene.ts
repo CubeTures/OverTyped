@@ -170,7 +170,7 @@ function drawScene(
 	}
 }
 
-const progressMult = 700;
+const progressMult = 500;
 
 // SETTING -> can change transformations
 function createModelMatrix(

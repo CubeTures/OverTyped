@@ -10,11 +10,11 @@ import (
 type ClientId = byte
 
 const ClientsPerLobby = 4
-const LobbyWait uint16 = 15
+const LobbyWait uint16 = 25
 const DisplayedPowerupCount = 4
 const AllowedPowerupCount = 2
 
-const WordCount = 100
+const WordCount = 80
 
 type Lobby struct {
 	id         int
