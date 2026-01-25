@@ -8,6 +8,11 @@ import type {
 	StartGame,
 	PlayerFinished,
 	ProgressUpdate,
+	PurchaseResult,
+	PowerupId,
+	UpdateWords,
+	StatusChanged,
+    Purchase,
 } from "./lib/comm.ts";
 import { connect as socketConnect } from "./lib/comm.ts";
 
@@ -21,16 +26,24 @@ export type CurrentPage = (typeof CurrentPage)[keyof typeof CurrentPage];
 
 type PlayerMap = { [key: number]: Player };
 
+export type PurchaseSuccess = {
+	powerupId: PowerupId;
+	success: boolean;
+};
+
 type PageContextType = {
 	socket: Socket;
 	page: CurrentPage;
 	setPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
 	players: PlayerMap;
-	progress: number;
-	statusEffects: StatusEffectId[];
+	currentPlayer: number;
 	name: string;
 	setName: React.Dispatch<React.SetStateAction<string>>;
 	words: string[];
+	powerups: PowerupId[];
+	setPowerups: React.Dispatch<React.SetStateAction<PowerupId[]>>;
+	setPurchase: React.Dispatch<React.SetStateAction<Purchase>>;
+	purchaseSuccess: PurchaseSuccess;
 };
 
 const PageContext = createContext<PageContextType | undefined>(undefined);
@@ -38,10 +51,11 @@ const PageContext = createContext<PageContextType | undefined>(undefined);
 function connect(
 	setSocket: React.Dispatch<React.SetStateAction<Socket>>,
 	setPlayers: React.Dispatch<React.SetStateAction<PlayerMap>>,
-	setProgress: React.Dispatch<React.SetStateAction<number>>,
-	setStatusEffects: React.Dispatch<React.SetStateAction<StatusEffectId[]>>,
 	setWords: React.Dispatch<React.SetStateAction<string[]>>,
-	setPage: React.Dispatch<React.SetStateAction<CurrentPage>>
+	setPage: React.Dispatch<React.SetStateAction<CurrentPage>>,
+	setPurchaseSuccess: React.Dispatch<React.SetStateAction<PurchaseSuccess>>,
+	setCurrentPlayer: React.Dispatch<React.SetStateAction<number>>,
+	setPowerups: React.Dispatch<React.SetStateAction<PowerupId[]>>
 ): (name: string) => Promise<void> {
 	return async (name: string) => {
 		const socket = await socketConnect();
@@ -56,6 +70,8 @@ function connect(
 			);
 			setWords(m.words);
 			setPage(CurrentPage.Lobby);
+			setCurrentPlayer(m.playerId);
+			setPowerups(m.powerups);
 		});
 		socket.event.onNewPlayer((m: NewPlayer) => {
 			setPlayers((i) => {
@@ -74,8 +90,22 @@ function connect(
 				return i;
 			});
 		});
-		socket.event.OnStartGame((_: StartGame) => {
+		socket.event.onStartGame((_: StartGame) => {
 			setPage(CurrentPage.Game);
+		});
+		socket.event.onStatusChanged((m: StatusChanged) => {
+			setPlayers((i) => {
+				i[m.playerId].statusEffects = m.statusEffects;
+				return i;
+			});
+		});
+		socket.event.onPurchaseResult((m: PurchaseResult) => {
+			setPurchaseSuccess({ powerupId: m.powerupId, success: m.success });
+		});
+		socket.event.onUpdateWords((m: UpdateWords) => {
+			setWords((i) => {
+				return i.slice(0, m.startIndex).concat(m.words);
+			});
 		});
 		console.log(socket);
 		socket.socket.addEventListener("open", (_) =>
@@ -92,10 +122,14 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 	const [page, setPage] = useState(CurrentPage.Login as CurrentPage);
 	const [socket, setSocket] = useState(null as any);
 	const [players, setPlayers] = useState({} as PlayerMap);
-	const [progress, setProgress] = useState(0);
-	const [statusEffects, setStatusEffects] = useState([] as StatusEffectId[]);
 	const [words, setWords] = useState([] as string[]);
 	const [name, setName] = useState("");
+	const [purchaseSuccess, setPurchaseSucces] = useState(
+		{} as PurchaseSuccess
+	);
+	const [powerups, setPowerups] = useState([] as PowerupId[]);
+	const [purchase, setPurchase] = useState({} as Purchase);
+	const [currentPlayer, setCurrentPlayer] = useState(0);
 	useEffect(() => {
 		console.log("name: '" + name + "'");
 		if (name === "") {
@@ -105,13 +139,20 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 		connect(
 			setSocket,
 			setPlayers,
-			setProgress,
-			setStatusEffects,
 			setWords,
-			setPage
+			setPage,
+			setPurchaseSucces,
+			setCurrentPlayer,
+			setPowerups
 		)(name);
 		return () => {};
 	}, [name]);
+	useEffect(() => {
+		if (powerups.length === undefined) {
+			return;
+		}
+		socket.sendSelect(powerups);
+	}, [powerups]);
 	return (
 		<PageContext.Provider
 			value={{
@@ -119,11 +160,14 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 				page,
 				setPage,
 				players,
-				statusEffects,
-				progress,
 				name,
 				setName,
 				words,
+				purchaseSuccess,
+				powerups,
+				setPowerups,
+				setPurchase,
+				currentPlayer,
 			}}
 		>
 			{children}

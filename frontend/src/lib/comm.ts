@@ -1,15 +1,30 @@
-export const Powerup = {} as const;
+export const Powerup = {
+	SpikeStrip: 0,
+	StickShift: 1,
+	Fog: 2,
+	IcyRoads: 3,
+	TireBoot: 4,
+	Scrambler: 5,
+	RearViewMirror: 6,
+} as const;
 
 export type PowerupId = (typeof Powerup)[keyof typeof Powerup];
 
-export const StatusEffect = {} as const;
+export const StatusEffect = Powerup;
 
 export type StatusEffectId = (typeof StatusEffect)[keyof typeof StatusEffect];
+
+export type Purchase = {
+	powerupId: PowerupId;
+	targetPlayer: number;
+};
 
 export const ClientOp = {
 	Register: 0,
 	Submit: 1,
+	PurchasePowerup: 2,
 	SkipWait: 3,
+	SelectPowerup: 4,
 } as const;
 
 export type RegisterMessage = {
@@ -26,7 +41,21 @@ export type SkipWaitMessage = {
 	opcode: typeof ClientOp.SkipWait;
 };
 
-export type ClientMessage = RegisterMessage | SubmitMessage | SkipWaitMessage;
+export type PurchasePowerupMessage = {
+	opcode: typeof ClientOp.PurchasePowerup;
+} & Purchase;
+
+export type SelectPowerupMessage = {
+	opcode: typeof ClientOp.SelectPowerup;
+	selectedPowerups: number[];
+};
+
+export type ClientMessage =
+	| RegisterMessage
+	| SubmitMessage
+	| SkipWaitMessage
+	| PurchasePowerupMessage
+	| SelectPowerupMessage;
 
 export const ServerOp = {
 	HubHello: 0,
@@ -35,6 +64,9 @@ export const ServerOp = {
 	StartGame: 3,
 	ProgressUpdate: 4,
 	PlayerFinished: 5,
+	StatusChanged: 6,
+	PurchaseResult: 7,
+	UpdateWords: 8,
 } as const;
 
 export type Player = {
@@ -55,6 +87,7 @@ export type LobbyHello = {
 	timeLeft: number;
 	players: Player[];
 	words: string[];
+	powerups: PowerupId[];
 };
 
 export type NewPlayer = {
@@ -74,6 +107,25 @@ export type ProgressUpdate = {
 export type PlayerFinished = {
 	opcode: typeof ServerOp.PlayerFinished;
 	id: number;
+	place: number;
+};
+
+export type StatusChanged = {
+	opcode: typeof ServerOp.StatusChanged;
+	playerId: number;
+	statusEffects: StatusEffectId[];
+};
+
+export type PurchaseResult = {
+	opcode: typeof ServerOp.PurchaseResult;
+	powerupId: PowerupId;
+	success: boolean;
+};
+
+export type UpdateWords = {
+	opcode: typeof ServerOp.UpdateWords;
+	startIndex: number;
+	words: string[];
 };
 
 export type ServerMessage =
@@ -82,7 +134,10 @@ export type ServerMessage =
 	| NewPlayer
 	| StartGame
 	| ProgressUpdate
-	| PlayerFinished;
+	| PlayerFinished
+	| StatusChanged
+	| PurchaseResult
+	| UpdateWords;
 
 const textDecoder = new TextDecoder("utf-8");
 const textEncoder = new TextEncoder();
@@ -92,7 +147,6 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 	const { opcode } = payload;
 	switch (opcode) {
 		case ClientOp.Register:
-			// payload: { opcode: 0, name: string }
 			const nameEncoded = textEncoder.encode(payload.name);
 			if (nameEncoded.length > 255) throw new Error("Name too long");
 			buffer = new ArrayBuffer(1 + 1 + nameEncoded.length); // opcode + nameLen + name
@@ -146,18 +200,33 @@ function parsePlayer(view: DataView, offset: number): [Player, number] {
 	];
 }
 
-// Helper: parses status effect IDs
-function parseStatusEffects(
+function parseEffectId(view: DataView, offset: number): [PowerupId, number] {
+	return parseU8(view, offset) as [PowerupId, number];
+}
+
+function parseU8(view: DataView, offset: number): [number, number] {
+	return [view.getUint8(offset), 1];
+}
+
+function parseU32(view: DataView, offset: number): [number, number] {
+	return [view.getUint32(offset), 4];
+}
+
+function parseList<T>(
 	view: DataView,
-	count: number,
-	offset: number
-): [StatusEffectId[], number] {
-	const arr = [];
+	offset: number,
+	parser: (arg0: DataView, arg1: number) => [T, number],
+	counter: (arg0: DataView, arg1: number) => [number, number] = parseU8
+): [T[], number] {
+	const arr = [] as T[];
+	let count;
+	[count, offset] = counter(view, offset);
+	let item;
 	for (let i = 0; i < count; i++) {
-		arr.push(view.getUint16(offset, false)); // big-endian
-		offset += 2;
+		[item, offset] = parser(view, offset);
+		arr.push(item);
 	}
-	return [arr as StatusEffectId[], offset];
+	return [arr, offset];
 }
 
 function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
@@ -175,22 +244,13 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 			const playerId = view.getUint8(offset++);
 			const timeLeft = view.getUint16(offset);
 			offset += 2;
-			const numPlayers = view.getUint8(offset++);
-			const players = [];
-			for (let i = 0; i < numPlayers; i++) {
-				let parsed;
-				[parsed, offset] = parsePlayer(view, offset);
-				players.push(parsed);
-			}
-			const numWords = view.getUint32(offset);
-			offset += 4;
-			const words = [];
-			for (let i = 0; i < numWords; i++) {
-				let parsed;
-				[parsed, offset] = parseWord(view, offset);
-				words.push(parsed);
-			}
-			return { players, opcode, words, timeLeft, playerId };
+			let players;
+			[players, offset] = parseList(view, offset, parsePlayer);
+			let words;
+			[words, offset] = parseList(view, offset, parseWord, parseU32);
+			let powerups;
+			[powerups, offset] = parseList(view, offset, parseEffectId);
+			return { players, opcode, words, timeLeft, playerId, powerups };
 		}
 
 		case ServerOp.NewPlayer: {
@@ -201,7 +261,8 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 
 		case ServerOp.PlayerFinished: {
 			const playerId = view.getUint8(offset++);
-			return { opcode, id: playerId };
+			const place = view.getUint8(offset++);
+			return { opcode, id: playerId, place };
 		}
 
 		case ServerOp.ProgressUpdate: {
@@ -215,19 +276,31 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 			return { opcode };
 		}
 
+		case ServerOp.StatusChanged: {
+			const playerId = view.getUint8(offset++);
+			let statusEffects;
+			[statusEffects, offset] = parseList(view, offset, parseEffectId);
+			return { opcode, statusEffects, playerId };
+		}
+
+		case ServerOp.PurchaseResult: {
+			const powerupId = view.getUint8(offset++) as PowerupId;
+			const success = view.getUint8(offset++) === 1;
+			return { opcode, powerupId, success };
+		}
+
+		case ServerOp.UpdateWords: {
+			const startIndex = view.getUint32(offset);
+			offset += 4;
+			let words;
+			[words, offset] = parseList(view, offset, parseWord);
+			return { opcode, startIndex, words };
+		}
+
 		default:
 			throw new Error("Unknown opcode: " + opcode);
 	}
 }
-
-/*
-// Example usage:
-ws.onmessage = function(e) {
-    const msg = parseServerMessage(e.data); // e.data is ArrayBuffer
-    console.log(msg);
-    // ... process msg
-};
-*/
 
 export type Socket = {
 	socket: WebSocket;
@@ -241,11 +314,16 @@ export type Socket = {
 		onNewPlayer: (arg0: (arg0: NewPlayer) => void) => void;
 		onProgressUpdate: (arg0: (arg0: ProgressUpdate) => void) => void;
 		onPlayerFinished: (arg0: (arg0: PlayerFinished) => void) => void;
-		OnStartGame: (arg0: (arg0: StartGame) => void) => void;
+		onStartGame: (arg0: (arg0: StartGame) => void) => void;
+		onStatusChanged: (arg0: (arg0: StatusChanged) => void) => void;
+		onPurchaseResult: (arg0: (arg0: PurchaseResult) => void) => void;
+		onUpdateWords: (arg0: (arg0: UpdateWords) => void) => void;
 	};
 	sendRegister: (name: string) => void;
 	sendSubmit: (key: string) => void;
 	sendSkip: () => void;
+	sendSelect: (arg0: PowerupId[]) => void;
+	sendPurchase: (arg0: Purchase) => void;
 };
 
 async function connect_raw(url: string): Promise<Socket> {
@@ -286,12 +364,18 @@ async function connect_raw(url: string): Promise<Socket> {
 				callIfOpCode(handler, ServerOp.LobbyHello),
 			onNewPlayer: (handler: (arg0: NewPlayer) => void) =>
 				callIfOpCode(handler, ServerOp.NewPlayer),
-			OnStartGame: (handler: (arg0: StartGame) => void) =>
+			onStartGame: (handler: (arg0: StartGame) => void) =>
 				callIfOpCode(handler, ServerOp.StartGame),
 			onProgressUpdate: (handler: (arg0: ProgressUpdate) => void) =>
 				callIfOpCode(handler, ServerOp.ProgressUpdate),
 			onPlayerFinished: (handler: (arg0: PlayerFinished) => void) =>
 				callIfOpCode(handler, ServerOp.PlayerFinished),
+			onStatusChanged: (handler: (arg0: StatusChanged) => void) =>
+				callIfOpCode(handler, ServerOp.StatusChanged),
+			onPurchaseResult: (handler: (arg0: PurchaseResult) => void) =>
+				callIfOpCode(handler, ServerOp.PurchaseResult),
+			onUpdateWords: (handler: (arg0: UpdateWords) => void) =>
+				callIfOpCode(handler, ServerOp.UpdateWords),
 		},
 		sendRegister: (name: string) => {
 			socket.send(
@@ -305,6 +389,22 @@ async function connect_raw(url: string): Promise<Socket> {
 		},
 		sendSkip: () => {
 			socket.send(serializeClientMessage({ opcode: ClientOp.SkipWait }));
+		},
+		sendSelect: (selectedPowerups: PowerupId[]) => {
+			socket.send(
+				serializeClientMessage({
+					opcode: ClientOp.SelectPowerup,
+					selectedPowerups,
+				})
+			);
+		},
+		sendPurchase: (purchase: Purchase) => {
+			socket.send(
+				serializeClientMessage({
+					opcode: ClientOp.PurchasePowerup,
+					...purchase,
+				})
+			);
 		},
 	};
 }
