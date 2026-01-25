@@ -4,6 +4,7 @@ import TitlePage from "./components/pages/TitlePage";
 import { CurrentPage, usePage } from "./PageProvider";
 import { useEnter } from "./hooks/useEnter";
 import { main } from "./lib/render-start";
+import { incrementStage } from "./lib/draw-scene";
 
 function App() {
 	const { page } = usePage();
@@ -30,6 +31,12 @@ function App() {
 			main(canvasRef.current);
 		}
 	}, [canvasRef]);
+
+	useEffect(() => {
+		if (ready) {
+			incrementStage()
+		}
+	}, [ready]);
 
 	return (
 		<div className="w-dvw h-dvh flex flex-col">

@@ -174,11 +174,12 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 			return buffer;
 
 		case ClientOp.SelectPowerup:
-			buffer = new ArrayBuffer(1 + payload.selectedPowerups.length);
+			buffer = new ArrayBuffer(2 + payload.selectedPowerups.length);
 			view = new DataView(buffer);
 			view.setUint8(0, opcode);
+            view.setUint8(1, payload.selectedPowerups.length)
 			for (let i = 0; i < payload.selectedPowerups.length; ++i) {
-				view.setUint8(1 + i, payload.selectedPowerups[i]);
+				view.setUint8(2 + i, payload.selectedPowerups[i]);
 			}
 			return buffer;
 

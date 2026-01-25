@@ -147,6 +147,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 				c.lobbyRead <- ClientLobbySkipWait{}
 
 			case *SelectPowerupsMessage:
+				c.log("power ups selected: %+v", msg.PowerupIDs)
 				if powerupsSelected && len(msg.PowerupIDs) != 2 {
 					continue
 				}
@@ -156,8 +157,10 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 				}
 
 			case *PowerupPurchaseMessage:
+				c.log("HEREERE")
 				pid := msg.PowerupID
 				if !powerups[pid] || usedPowerups[pid] {
+					c.log("DENIED")
 					continue
 				}
 				usedPowerups[pid] = true

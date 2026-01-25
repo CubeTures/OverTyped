@@ -240,7 +240,6 @@ function loadTexture(gl: WebGLRenderingContext, url: string, rgba: glm.vec4 = [0
 		// power of 2 in both dimensions.
 		if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
 			// Yes, it's a power of 2. Generate mips.
-			console.log("power of 2 yay");
 			gl.generateMipmap(gl.TEXTURE_2D);
 		} else {
 			console.log("not power of 2 jvr");
