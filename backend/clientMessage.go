@@ -108,6 +108,7 @@ func (*SelectPowerupsMessage) Opcode() Opcode {
 }
 
 func (m *SelectPowerupsMessage) UnmarshalBinary(data []byte) error {
+	fmt.Printf("powerup message: %+v\n", data)
 	if len(data) < 1 {
 		return fmt.Errorf("select powerups: expected # selections")
 	}
