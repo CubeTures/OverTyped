@@ -105,8 +105,7 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 			return buffer;
 
 		case ClientOp.Submit:
-			// payload: { opcode: 1, answer: number }
-			buffer = new ArrayBuffer(1 + 4); // opcode + answer
+			buffer = new ArrayBuffer(1 + 1); // opcode + answer
 			view = new DataView(buffer);
 			view.setUint8(0, opcode);
 			const encodedKey = textEncoder.encode(payload.key);
