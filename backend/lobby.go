@@ -10,7 +10,7 @@ import (
 type ClientId = byte
 
 const ClientsPerLobby = 4
-const LobbyWait uint16 = 30
+const LobbyWait uint16 = 15
 const DisplayedPowerupCount = 4
 const AllowedPowerupCount = 2
 
