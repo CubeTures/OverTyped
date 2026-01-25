@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -18,7 +19,9 @@ type Client struct {
 	hub *Hub
 
 	lobbyWrite chan ServerMessage
-	lobbyRead  chan ClientLobbyMessage
+
+	lobbyMsgWrite chan LobbyClientMessage
+	lobbyRead     chan ClientLobbyMessage
 
 	unregister chan *Client
 	words      []string
@@ -29,11 +32,9 @@ type Client struct {
 }
 
 func (c *Client) readPump() {
-	waitingForSpace := false
-
-	// typing state
-	idx := 0     // index into word list
-	wordIdx := 0 // index into current word
+	stateHandlerDone := make(chan struct{})
+	msgs := make(chan ClientMessage)
+	go c.stateHandler(stateHandlerDone, msgs)
 
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -66,53 +67,14 @@ func (c *Client) readPump() {
 		c.log("received client message: %d %T",
 			clientMessage.Opcode(), clientMessage)
 
-		switch clientMessage := clientMessage.(type) {
-		case *PowerupPurchaseMessage:
-		case *RegisterMessage:
-
-		case *SkipWaitMessage:
-			c.lobbyRead <- ClientLobbySkipWait{}
-
-		case *SubmissionMessage:
-			answerCharacter := clientMessage.Answer
-
-			if waitingForSpace {
-				if answerCharacter == ' ' {
-					wordIdx = 0
-					idx++
-					c.lobbyRead <- ClientLobbyProgressUpdate{
-						clientId: c.id,
-						idx:      idx,
-					}
-					waitingForSpace = false
-				}
-				continue
-			}
-
-			// correct letter
-			if answerCharacter == c.words[idx][wordIdx] {
-				wordIdx++
-
-				// finished test
-				if wordIdx == len(c.words[idx]) && idx == len(c.words) {
-					c.lobbyRead <- ClientLobbyFinished{
-						clientId: c.id,
-					}
-					continue
-				}
-
-				// finished word
-				if wordIdx == len(c.words[idx]) {
-					waitingForSpace = true
-				}
-			}
-		}
+		msgs <- clientMessage
 	}
 
 	c.log("unregistering")
 
 	c.closed = true
 	close(c.lobbyWrite)
+	close(stateHandlerDone)
 
 	c.unregister <- c
 }
@@ -145,6 +107,160 @@ func (c *Client) writePump() {
 	c.log("writePump closed")
 }
 
+func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
+	waitingForSpace := false
+
+	// typing state
+	idx := 0     // index into word list
+	wordIdx := 0 // index into current word
+
+	// status effect states
+	var (
+		powerups         [PowerupCount]bool
+		usedPowerups     [PowerupCount]bool
+		statusEffects    [PowerupCount]bool
+		powerupsSelected bool = false
+	)
+
+	// status effect timers
+	// start really long, then stop them later to reset to actual duration
+	fogTimer := time.NewTimer(time.Hour)
+	tireBootTimer := time.NewTimer(time.Hour)
+	rearViewMirrorTimer := time.NewTimer(time.Hour)
+
+	for {
+		select {
+
+		case msg := <-msgs:
+			switch msg := msg.(type) {
+			case *RegisterMessage:
+
+			case *SkipWaitMessage:
+				c.lobbyRead <- ClientLobbySkipWait{}
+
+			case *SelectPowerupsMessage:
+				if powerupsSelected && len(msg.PowerupIDs) != 2 {
+					continue
+				}
+				powerupsSelected = true
+				for _, id := range msg.PowerupIDs {
+					powerups[id] = true
+				}
+
+			case *PowerupPurchaseMessage:
+				pid := msg.PowerupID
+				if !powerups[pid] || usedPowerups[pid] {
+					continue
+				}
+				usedPowerups[pid] = true
+				c.lobbyRead <- ClientLobbyApplyStatusEffect{
+					affectedClientId: msg.Affected,
+					powerupId:        msg.PowerupID,
+				}
+
+			case *SubmissionMessage:
+				answerCharacter := msg.Answer
+
+				if answerCharacter == '\b' && idx > 0 {
+					idx--
+					continue
+				}
+
+				if waitingForSpace {
+					if answerCharacter == ' ' {
+						wordIdx = 0
+						idx++
+						c.lobbyRead <- ClientLobbyProgressUpdate{
+							clientId: c.id,
+							idx:      idx,
+						}
+						waitingForSpace = false
+					}
+					continue
+				}
+
+				// correct letter
+				if answerCharacter == c.words[idx][wordIdx] {
+					wordIdx++
+
+					// finished test
+					if wordIdx == len(c.words[idx]) && idx == len(c.words) {
+						c.lobbyRead <- ClientLobbyFinished{
+							clientId: c.id,
+						}
+						continue
+					}
+
+					// finished word
+					if wordIdx == len(c.words[idx]) {
+						waitingForSpace = true
+					}
+				}
+			}
+
+		case msg := <-c.lobbyMsgWrite:
+			switch msg := msg.(type) {
+			case LobbyClientApplyStatusEffect:
+				statusEffects[msg.powerupId] = true
+				c.lobbyRead <- ClientLobbyStatusChanged{
+					clientId:   c.id,
+					powerupIds: getPowerups(statusEffects),
+				}
+
+				switch PowerupId(msg.powerupId) {
+				case PowerupCount:
+
+				case PowerupFog:
+					fogTimer.Stop()
+					fogTimer.Reset(fogDuration * time.Second)
+				case PowerupIcyRoads:
+				case PowerupRearViewMirror:
+					rearViewMirrorTimer.Stop()
+					rearViewMirrorTimer.Reset(rearViewMirrorDuration * time.Second)
+				case PowerupScrambler:
+				case PowerupSpikeStrip:
+				case PowerupStickShift:
+				case PowerupTireBoot:
+					tireBootTimer.Stop()
+					tireBootTimer.Reset(tireBootDuration * time.Second)
+				}
+			}
+
+		case <-fogTimer.C:
+			statusEffects[PowerupFog] = false
+			c.lobbyRead <- ClientLobbyStatusChanged{
+				clientId:   c.id,
+				powerupIds: getPowerups(statusEffects),
+			}
+		case <-tireBootTimer.C:
+			statusEffects[PowerupTireBoot] = false
+			c.lobbyRead <- ClientLobbyStatusChanged{
+				clientId:   c.id,
+				powerupIds: getPowerups(statusEffects),
+			}
+		case <-rearViewMirrorTimer.C:
+			statusEffects[PowerupRearViewMirror] = false
+			c.lobbyRead <- ClientLobbyStatusChanged{
+				clientId:   c.id,
+				powerupIds: getPowerups(statusEffects),
+			}
+
+		case <-done:
+			return
+		}
+	}
+}
+
 func (c *Client) log(format string, v ...any) {
 	log.Printf("client %d: %s", c.id, fmt.Sprintf(format, v...))
+}
+
+func getPowerups(statusEffects [PowerupCount]bool) []byte {
+	pids := make([]byte, 0, PowerupCount)
+	for i, t := range statusEffects {
+		if t {
+			pids = append(pids, byte(i))
+		}
+	}
+	return pids
 }

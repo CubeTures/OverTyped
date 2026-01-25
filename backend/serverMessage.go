@@ -61,7 +61,7 @@ type LobbyGreetingMessage struct {
 	TimeRemaining uint16
 	Players       []Player
 	Words         []string
-	Powerups      []byte
+	Powerups      []int
 }
 
 func (m LobbyGreetingMessage) Opcode() byte {
@@ -103,7 +103,7 @@ func (m LobbyGreetingMessage) MarshalBinary() ([]byte, error) {
 
 	buf.WriteByte(byte(len(m.Powerups)))
 	for _, powerup := range m.Powerups {
-		buf.WriteByte(powerup)
+		buf.WriteByte(byte(powerup))
 	}
 
 	return buf.Bytes(), nil

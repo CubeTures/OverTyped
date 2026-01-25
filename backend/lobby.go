@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -10,6 +11,8 @@ type ClientId = byte
 
 const ClientsPerLobby = 4
 const LobbyWait uint16 = 30
+const DisplayedPowerupCount = 4
+const AllowedPowerupCount = 2
 
 type Lobby struct {
 	id         int
@@ -65,7 +68,7 @@ func (l *Lobby) run() {
 	startGameTimer := time.NewTimer(time.Duration(LobbyWait) * time.Second)
 	timerStart := time.Now()
 
-	openLobbyTimer := time.NewTimer(time.Duration(LobbyWait - 10) * time.Second)
+	openLobbyTimer := time.NewTimer(time.Duration(LobbyWait-10) * time.Second)
 
 startGameLoop:
 	for {
@@ -126,10 +129,22 @@ startGameLoop:
 
 			case ClientLobbyFinished:
 				l.broadcast(PlayerFinishedMessage{
-					PlayerID: msg.clientId,
+					PlayerID:  msg.clientId,
 					Placement: byte(activePlayers),
 				})
 				activePlayers--
+
+			case ClientLobbyApplyStatusEffect:
+				l.clients[msg.affectedClientId].lobbyMsgWrite <- LobbyClientApplyStatusEffect{
+					powerupId: msg.powerupId,
+				}
+
+			case ClientLobbyStatusChanged:
+				l.broadcast(StatusChangedMessage{
+					PlayerID:        msg.clientId,
+					StatusEffectIDs: msg.powerupIds,
+				})
+
 			}
 
 		case <-l.unregister:
@@ -157,6 +172,7 @@ func (l *Lobby) registerClient(c *Client, timeRemaining uint16) {
 
 	c.unregister = l.unregister
 	c.lobbyRead = l.lobbyRead
+	c.words = append([]string{}, l.words...)
 
 	go c.readPump()
 
@@ -164,7 +180,8 @@ func (l *Lobby) registerClient(c *Client, timeRemaining uint16) {
 		PlayerID:      c.id,
 		TimeRemaining: timeRemaining,
 		Players:       l.players(),
-		Words:         l.words,
+		Words:         c.words,
+		Powerups:      rand.Perm(int(PowerupCount))[:DisplayedPowerupCount],
 	}
 
 	l.clients[c.id] = c

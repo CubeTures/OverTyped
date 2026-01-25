@@ -54,7 +54,8 @@ func (h *Hub) ServeWs(w http.ResponseWriter, r *http.Request) {
 	c := &Client{
 		conn: conn,
 
-		lobbyWrite: make(chan ServerMessage),
+		lobbyWrite:    make(chan ServerMessage),
+		lobbyMsgWrite: make(chan LobbyClientMessage),
 	}
 
 	_, message, err := c.conn.ReadMessage()

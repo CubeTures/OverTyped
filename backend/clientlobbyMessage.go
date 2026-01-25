@@ -21,3 +21,27 @@ type ClientLobbyFinished struct {
 }
 
 func (ClientLobbyFinished) clientLobbyMessage() {}
+
+type ClientLobbyApplyStatusEffect struct {
+	affectedClientId byte
+	powerupId        byte
+}
+
+func (ClientLobbyApplyStatusEffect) clientLobbyMessage() {}
+
+type ClientLobbyStatusChanged struct {
+	clientId   byte
+	powerupIds []byte
+}
+
+func (ClientLobbyStatusChanged) clientLobbyMessage() {}
+
+type LobbyClientMessage interface {
+	lobbyClientMessage()
+}
+
+type LobbyClientApplyStatusEffect struct {
+	powerupId byte
+}
+
+func (LobbyClientApplyStatusEffect) lobbyClientMessage() {}
