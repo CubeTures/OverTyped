@@ -29,6 +29,9 @@ type Client struct {
 	// room things
 	done   bool
 	closed bool
+
+	// calculating wpm
+	raceStart time.Time
 }
 
 func (c *Client) readPump() {
@@ -81,6 +84,9 @@ func (c *Client) readPump() {
 
 func (c *Client) writePump() {
 	for msg := range c.lobbyWrite {
+		if _, ok := msg.(RaceStartedMessage); ok {
+			c.raceStart = time.Now()
+		}
 		binaryMsg, err := msg.MarshalBinary()
 		if err != nil {
 			c.log("error marshaing binary: %+v", err)
@@ -164,9 +170,15 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 			case *SubmissionMessage:
 				if msg.Answer == uint32(idx) {
 					idx++
+
+					secSpentRacing := float32(time.Since(c.raceStart)) / float32(time.Second)
+					wordsCompleted := countCharsWithSpaces(wordsEnglish, idx) / 5
+					wpm := 60 * float32(wordsCompleted) / secSpentRacing
+
 					c.lobbyRead <- ClientLobbyProgressUpdate{
 						clientId: c.id,
 						idx:      idx,
+						wpm:      int(wpm),
 					}
 
 					for statusEffect := range wordsLeft {

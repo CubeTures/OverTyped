@@ -3,7 +3,7 @@ import { usePage } from "@/PageProvider";
 import { Reorder, motion } from "framer-motion";
 
 function LobbyList() {
-	const { players } = usePage();
+	const { players, currentPlayer } = usePage();
 
 	const orderedPlayers: Player[] = Object.values(players).sort((a, b) => {
 		if (a.progress === b.progress) {

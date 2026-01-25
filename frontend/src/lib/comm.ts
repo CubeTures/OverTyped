@@ -75,6 +75,7 @@ export type Player = {
 	statusEffects: StatusEffectId[];
 	finished: boolean;
 	progress: number;
+	wpm: number;
 };
 
 export type HubHello = {
@@ -102,6 +103,7 @@ export type ProgressUpdate = {
 	opcode: typeof ServerOp.ProgressUpdate;
 	playerId: number;
 	progress: number;
+	wpm: number;
 };
 
 export type PlayerFinished = {
@@ -211,7 +213,7 @@ function parsePlayer(view: DataView, offset: number): [Player, number] {
 	let name;
 	[name, offset] = parseWord(view, offset);
 	return [
-		{ id: playerId, name, statusEffects: [], finished: false, progress: 0 },
+		{ id: playerId, name, statusEffects: [], finished: false, progress: 0, wpm: 0 },
 		offset,
 	];
 }
@@ -285,7 +287,8 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 			const playerId = view.getUint8(offset++);
 			const progress = view.getUint32(offset, false);
 			offset += 4;
-			return { opcode, playerId, progress };
+			const wpm = view.getUint32(offset, false);
+			return { opcode, playerId, progress, wpm };
 		}
 
 		case ServerOp.StartGame: {

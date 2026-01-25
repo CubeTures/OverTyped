@@ -125,6 +125,7 @@ startGameLoop:
 				l.broadcast(ProgressUpdateMessage{
 					PlayerID: msg.clientId,
 					Progress: uint32(msg.idx),
+					WPM:      uint32(msg.wpm),
 				})
 
 			case ClientLobbyFinished:
@@ -136,7 +137,7 @@ startGameLoop:
 
 			case ClientLobbyApplyStatusEffect:
 				l.clients[msg.affectedClientId].lobbyMsgWrite <- LobbyClientApplyStatusEffect{
-					powerupId: msg.powerupId,
+					powerupId:    msg.powerupId,
 					fromClientId: msg.fromClientId,
 				}
 

@@ -95,7 +95,7 @@ function connect(
 		socket.event.onStatusChanged((m: StatusChanged) => {
 			setPlayers((i) => {
 				i[m.playerId].statusEffects = m.statusEffects;
-				return i;
+				return {...i};
 			});
 		});
 		socket.event.onPurchaseResult((m: PurchaseResult) => {
