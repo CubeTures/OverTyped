@@ -111,7 +111,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 	waitingForSpace := false
 
 	// typing state
-	idx := 0     // index into word list
+	wordlistIdx := 0     // index into word list
 	wordIdx := 0 // index into current word
 
 	// status effect states
@@ -161,18 +161,18 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 			case *SubmissionMessage:
 				answerCharacter := msg.Answer
 
-				if answerCharacter == '\b' && idx > 0 {
-					idx--
+				if answerCharacter == '\b' && wordIdx > 0 {
+					wordIdx--
 					continue
 				}
 
 				if waitingForSpace {
 					if answerCharacter == ' ' {
 						wordIdx = 0
-						idx++
+						wordlistIdx++
 						c.lobbyRead <- ClientLobbyProgressUpdate{
 							clientId: c.id,
-							idx:      idx,
+							idx:      wordlistIdx,
 						}
 						waitingForSpace = false
 					}
@@ -180,11 +180,11 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 				}
 
 				// correct letter
-				if answerCharacter == c.words[idx][wordIdx] {
+				if answerCharacter == c.words[wordlistIdx][wordIdx] {
 					wordIdx++
 
 					// finished test
-					if wordIdx == len(c.words[idx]) && idx == len(c.words) {
+					if wordIdx == len(c.words[wordlistIdx]) && wordlistIdx == len(c.words) {
 						c.lobbyRead <- ClientLobbyFinished{
 							clientId: c.id,
 						}
@@ -192,7 +192,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 					}
 
 					// finished word
-					if wordIdx == len(c.words[idx]) {
+					if wordIdx == len(c.words[wordlistIdx]) {
 						waitingForSpace = true
 					}
 				}
