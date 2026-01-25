@@ -176,6 +176,8 @@ func (l *Lobby) registerClient(c *Client, timeRemaining uint16) {
 
 	go c.readPump()
 
+	l.clients[c.id] = c
+
 	c.lobbyWrite <- LobbyGreetingMessage{
 		PlayerID:      c.id,
 		TimeRemaining: timeRemaining,
@@ -183,8 +185,6 @@ func (l *Lobby) registerClient(c *Client, timeRemaining uint16) {
 		Words:         c.words,
 		Powerups:      rand.Perm(int(PowerupCount))[:DisplayedPowerupCount],
 	}
-
-	l.clients[c.id] = c
 
 	if l.clientCount() == ClientsPerLobby {
 		l.open = false
