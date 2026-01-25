@@ -86,6 +86,7 @@ function connect(
 		socket.event.onProgressUpdate((m: ProgressUpdate) => {
 			setPlayers((i) => {
 				i[m.playerId].progress = m.progress;
+				i[m.playerId].wpm = m.wpm;
 				return { ...i };
 			});
 		});
@@ -95,7 +96,7 @@ function connect(
 		socket.event.onStatusChanged((m: StatusChanged) => {
 			setPlayers((i) => {
 				i[m.playerId].statusEffects = m.statusEffects;
-				return {...i};
+				return { ...i };
 			});
 		});
 		socket.event.onPurchaseResult((m: PurchaseResult) => {

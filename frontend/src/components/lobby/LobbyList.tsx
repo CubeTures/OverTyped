@@ -34,13 +34,12 @@ function LobbyList() {
 						>
 							{i + 1}
 						</motion.span>
-						<motion.div
-							layout
+						<div
 							className={`flex justify-between rounded-lg w-full h-full py-1 px-4 mr-1 ${player.id == currentPlayer ? "bg-muted" : ""}`}
 						>
-							<motion.div>{player.name}</motion.div>
-							{player.wpm > 0 && <motion.div>{player.wpm} WPM</motion.div>}
-						</motion.div>
+							<div>{player.name}</div>
+							{player.wpm > 0 && <div>{player.wpm} WPM</div>}
+						</div>
 					</Reorder.Item>
 				))}
 			</Reorder.Group>
