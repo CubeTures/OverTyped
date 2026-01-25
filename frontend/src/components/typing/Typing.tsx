@@ -66,14 +66,19 @@ export default function Typing({ words }: Props) {
 						currentPlayer,
 						targets[selectedTarget]
 					);
+					console.log(
+						target,
+						POWERUP_INFO[powerups[selectedPowerup]]
+					);
 					if (
-						target &&
-						POWERUP_INFO[selectedPowerup as PowerupId].action ===
+						target !== undefined &&
+						POWERUP_INFO[powerups[selectedPowerup]].action ===
 							"active"
 					) {
+						console.log("SEND IT");
 						socket.sendPurchase({
 							powerupId:
-								POWERUP_INFO[selectedPowerup as PowerupId].id,
+								POWERUP_INFO[powerups[selectedPowerup]].id,
 							targetPlayer: target,
 						});
 					}
