@@ -91,8 +91,8 @@ function App() {
 						className={`absolute z-100 w-full h-full ${animationEnd ? "opacity-100" : "opacity-0"} transition-opacity duration-5000`}
 					/> */}
 					<canvas
-						width="640"
-						height="480"
+						width="1920"
+						height="1080"
 						className="w-full h-full"
 						ref={canvasRef}
 					></canvas>
