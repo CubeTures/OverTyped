@@ -1,17 +1,26 @@
-import { usePage } from "@/PageProvider";
-import { useRef, useState, type KeyboardEventHandler } from "react";
+import { CurrentPage, usePage } from "@/PageProvider";
+import { useEffect, useRef, useState, type KeyboardEventHandler } from "react";
 import FadeTypewriter from "../FadeTypewriter";
+import { Spinner } from "@/components/ui/spinner";
 
 function TitlePage() {
-	const { setName } = usePage();
+	const { page, setName } = usePage();
 	const [tempName, setTempName] = useState("");
+	const [loading, setLoading] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
 		if (e.code === "Enter" && tempName !== "") {
 			setName(tempName);
+			setLoading(true);
 		}
 	};
+
+	useEffect(() => {
+		if (page === CurrentPage.Lobby) {
+			setLoading(false);
+		}
+	}, [page]);
 
 	function refocus() {
 		inputRef.current?.focus();
@@ -19,9 +28,14 @@ function TitlePage() {
 
 	return (
 		<button
-			className="w-full h-full flex flex-col justify-center items-center gap-4"
+			className="w-full h-full flex flex-col justify-center items-center gap-4 relative"
 			onClick={refocus}
 		>
+			<div
+				className={`absolute w-full h-full inset-0 backdrop-blur-md bg-background/50 ${loading ? "opacity-100" : "opacity-0"} flex justify-center items-center`}
+			>
+				<Spinner />
+			</div>
 			<FadeTypewriter
 				className="text-xl"
 				text="What do they call you?"

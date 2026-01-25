@@ -1,6 +1,7 @@
 import { CurrentPage, usePage } from "@/PageProvider";
-import Typing from "../typing/Typing";
 import LobbyList from "../lobby/LobbyList";
+import Typing from "../typing/Typing";
+import Draft from "../lobby/Draft";
 
 function GamePage() {
 	const { page, words } = usePage();
@@ -11,7 +12,7 @@ function GamePage() {
 			{page === CurrentPage.Game ? (
 				<Typing words={words.slice(0, 30)} />
 			) : (
-				<div className="w-full grow">Loading Lobby</div>
+				<Draft />
 			)}
 		</>
 	);

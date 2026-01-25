@@ -4,16 +4,7 @@ import { useCaretPosition } from "@/hooks/useCaretPosition";
 import Word from "./Word";
 import { useMonoCharSize } from "@/hooks/useFontLetterSize";
 import { usePage } from "@/PageProvider";
-
-const Powerups = [
-	"spike strip",
-	"stick shift",
-	"fog",
-	"icy roads",
-	"tire boot",
-	"scrambler",
-	"rear view mirror",
-];
+import { POWERUP_INFO } from "@/lib/powerups";
 
 const targets = ["first", "last", "closest"];
 
@@ -38,8 +29,7 @@ export default function Typing({ words }: Props) {
 		charSize.width
 	);
 
-	// const { powerups } = usePage()
-	const powerups = [1, 2];
+	const { powerups } = usePage();
 
 	useCaretPosition(testRef, caretRef, currentWord, input, (_line) => {
 		if (_line !== line && _line !== 0) {
@@ -83,15 +73,16 @@ export default function Typing({ words }: Props) {
 			className="w-full h-full flex justify-center items-center flex-col relative"
 			onClick={refocus}
 		>
-			<div className="absolute font-mono top-[theme(spacing.6)] text-[#a0a0a0] flex bg-[#1c1c1c] px-8 h-10 text-lg rounded-lg items-center justify-center">
+			<div className="absolute font-mono top-6 text-[#a0a0a0] flex bg-[#1c1c1c] px-8 h-10 text-lg rounded-lg items-center justify-center">
 				<div className="flex gap-10">
 					{powerups.map((p, i) => (
 						<div
 							key={i}
-							className={`transition-colors hover:text-foreground cursor-pointer ${selectedPowerup === i ? "text-foreground" : ""}`}
+							className={`transition-all text-foreground hover:text-foreground cursor-pointer text-nowrap items-center flex gap-2 ${selectedPowerup === i ? "" : "brightness-60 hover:brightness-100"}`}
 							onClick={() => setSelectedPowerup(i)}
 						>
-							{Powerups[p]}
+							<img src={POWERUP_INFO[p].icon} className="size-5"/>
+							<p>{POWERUP_INFO[p].name}</p>
 						</div>
 					))}
 				</div>

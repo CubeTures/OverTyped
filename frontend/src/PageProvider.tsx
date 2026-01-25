@@ -80,13 +80,13 @@ function connect(
 		socket.event.onPlayerFinished((m: PlayerFinished) => {
 			setPlayers((i) => {
 				i[m.id].finished = true;
-				return i;
+				return { ...i };
 			});
 		});
 		socket.event.onProgressUpdate((m: ProgressUpdate) => {
 			setPlayers((i) => {
 				i[m.playerId].progress = m.progress;
-				return i;
+				return { ...i };
 			});
 		});
 		socket.event.onStartGame((_: StartGame) => {
