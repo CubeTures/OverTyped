@@ -322,7 +322,7 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 			const startIndex = view.getUint32(offset);
 			offset += 4;
 			let words;
-			[words, offset] = parseList(view, offset, parseWord);
+			[words, offset] = parseList(view, offset, parseWord, parseU32);
 			return { opcode, startIndex, words };
 		}
 
