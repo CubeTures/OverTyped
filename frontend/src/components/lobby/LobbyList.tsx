@@ -3,7 +3,7 @@ import { usePage } from "@/PageProvider";
 import { Reorder, motion } from "framer-motion";
 
 function LobbyList() {
-	const { players } = usePage();
+	const { players, currentPlayer } = usePage();
 
 	const orderedPlayers: Player[] = Object.values(players).sort((a, b) => {
 		if (a.progress === b.progress) {
@@ -14,29 +14,33 @@ function LobbyList() {
 	});
 
 	return (
-		<div className="absolute top-0 left-0 flex flex-col bg-card/30 m-4 rounded-l-xl">
-			<div className="w-full p-4 bg-card/80 text-center rounded-tl-xl">
-				Speed
-			</div>
+		<div className="absolute top-0 left-0 flex flex-col bg-card m-4 rounded-md font-mono w-3xs">
+			<div className="w-full p-4 text-center rounded-md">Speed</div>
 			<Reorder.Group
 				axis="y"
 				values={orderedPlayers.map((p) => p.id)}
 				onReorder={() => {}}
-				className="flex flex-col"
+				className="flex flex-col p-1 pb-2"
 			>
 				{orderedPlayers.map((player, i) => (
 					<Reorder.Item
 						key={player.id}
 						value={player.id}
-						className="flex bg-muted/50 gap-2 p-4 last:rounded-bl-xl"
+						className="flex items-center gap-4"
 					>
 						<motion.span
 							layout
-							className="font-mono text-sm"
+							className="font-mono align-baseline pl-3"
 						>
 							{i + 1}
 						</motion.span>
-						<motion.span layout>{player.name}</motion.span>
+						<motion.div
+							layout
+							className={`flex justify-between rounded-lg w-full h-full py-1 px-4 mr-1 ${player.id == currentPlayer ? "bg-muted" : ""}`}
+						>
+							<motion.div>{player.name}</motion.div>
+							{player.wpm > 0 && <motion.div>{player.wpm} WPM</motion.div>}
+						</motion.div>
 					</Reorder.Item>
 				))}
 			</Reorder.Group>

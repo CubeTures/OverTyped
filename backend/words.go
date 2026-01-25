@@ -325,3 +325,11 @@ func repeatChars(s string) string {
 
 	return b.String()
 }
+
+func countCharsWithSpaces(words []string, n int) int {
+	res := 0
+	for i := 0; i < n - 1; i++ {
+		res += len(words[i]) + 1
+	}
+	return res + len(words[n - 1])
+}

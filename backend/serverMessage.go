@@ -144,6 +144,7 @@ func (m RaceStartedMessage) MarshalBinary() ([]byte, error) {
 type ProgressUpdateMessage struct {
 	PlayerID byte
 	Progress uint32
+	WPM      uint32
 }
 
 func (m ProgressUpdateMessage) Opcode() byte {
@@ -156,6 +157,10 @@ func (m ProgressUpdateMessage) MarshalBinary() ([]byte, error) {
 	buf.WriteByte(m.PlayerID)
 
 	if err := binary.Write(&buf, binary.BigEndian, m.Progress); err != nil {
+		return nil, err
+	}
+
+	if err := binary.Write(&buf, binary.BigEndian, m.WPM); err != nil {
 		return nil, err
 	}
 
