@@ -37,6 +37,7 @@ type PageContextType = {
 	page: CurrentPage;
 	setPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
 	players: PlayerMap;
+	setPlayers: React.Dispatch<React.SetStateAction<PlayerMap>>;
 	currentPlayer: number;
 	name: string;
 	setName: React.Dispatch<React.SetStateAction<string>>;
@@ -167,6 +168,7 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 				page,
 				setPage,
 				players,
+				setPlayers,
 				name,
 				setName,
 				words,

@@ -177,7 +177,7 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 			buffer = new ArrayBuffer(2 + payload.selectedPowerups.length);
 			view = new DataView(buffer);
 			view.setUint8(0, opcode);
-            view.setUint8(1, payload.selectedPowerups.length)
+			view.setUint8(1, payload.selectedPowerups.length);
 			for (let i = 0; i < payload.selectedPowerups.length; ++i) {
 				view.setUint8(2 + i, payload.selectedPowerups[i]);
 			}
@@ -214,7 +214,14 @@ function parsePlayer(view: DataView, offset: number): [Player, number] {
 	let name;
 	[name, offset] = parseWord(view, offset);
 	return [
-		{ id: playerId, name, statusEffects: [], finished: false, progress: 0, wpm: 0 },
+		{
+			id: playerId,
+			name,
+			statusEffects: [],
+			finished: false,
+			progress: 0,
+			wpm: 0,
+		},
 		offset,
 	];
 }
@@ -430,7 +437,10 @@ async function connect_raw(url: string): Promise<Socket> {
 }
 
 export async function connect(): Promise<Socket> {
-	const proto = (window.location.protocol == "http:") ? "ws://" : "wss://"
-	return await connect_raw(`${proto}${window.location.host}/ws`)
-	// return await connect_raw("ws://127.0.0.1:8080/ws");
+	if (import.meta.env.DEV) {
+		return await connect_raw("ws://127.0.0.1:8080/ws");
+	} else {
+		const proto = window.location.protocol == "http:" ? "ws://" : "wss://";
+		return await connect_raw(`${proto}${window.location.host}/ws`);
+	}
 }

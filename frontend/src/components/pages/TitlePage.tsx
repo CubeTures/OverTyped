@@ -5,6 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 function TitlePage() {
 	const { page, setName } = usePage();
+
 	const [tempName, setTempName] = useState("");
 	const [loading, setLoading] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);

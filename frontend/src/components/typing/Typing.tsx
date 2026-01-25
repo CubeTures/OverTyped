@@ -191,7 +191,7 @@ export default function Typing({ words }: Props) {
 							status={w.status}
 							isActive={i === currentWord}
 							input={input}
-							offsetY={line > 2 ? 40 * (line - 2) : 0}
+							offsetY={line > 2 ? 36 * (line - 2) : 0}
 						/>
 					))}
 				</div>
