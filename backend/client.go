@@ -247,44 +247,52 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 					fogTimer.Reset(fogDuration * time.Second)
 
 				case PowerupIcyRoads:
-					c.words = RepeatCharsRange(c.words, powerupOffset, wordsIced)
 					lidx := idx + powerupOffset
-					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(lidx),
-						words: c.words[lidx:],
+					if lidx < len(c.words) {
+						c.words = RepeatCharsRange(c.words, powerupOffset, wordsIced)
+						c.lobbyWrite <- UpdateWordsMessage{
+							idx:   uint32(lidx),
+							words: c.words[lidx:],
+						}
+						wordsLeft[PowerupIcyRoads] = wordsIced
 					}
-					wordsLeft[PowerupIcyRoads] = wordsIced
 
 				case PowerupRearViewMirror:
 					rearViewMirrorTimer.Stop()
 					rearViewMirrorTimer.Reset(rearViewMirrorDuration * time.Second)
 
 				case PowerupScrambler:
-					c.words = ScrambleRange(c.words, powerupOffset, wordsScrambled)
 					lidx := idx + powerupOffset
-					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(lidx),
-						words: c.words[lidx:],
+					if lidx < len(c.words) {
+						c.words = ScrambleRange(c.words, powerupOffset, wordsScrambled)
+						c.lobbyWrite <- UpdateWordsMessage{
+							idx:   uint32(lidx),
+							words: c.words[lidx:],
+						}
+						wordsLeft[PowerupScrambler] = wordsScrambled
 					}
-					wordsLeft[PowerupScrambler] = wordsScrambled
 
 				case PowerupSpikeStrip:
-					c.words = append(c.words, RandomWords(wordsEnglish, spikeStripWordsAdded)...)
 					lidx := idx + powerupOffset
-					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(lidx),
-						words: c.words[lidx:],
+					if lidx < len(c.words) {
+						c.words = append(c.words, RandomWords(wordsEnglish, spikeStripWordsAdded)...)
+						c.lobbyWrite <- UpdateWordsMessage{
+							idx:   uint32(lidx),
+							words: c.words[lidx:],
+						}
+						wordsLeft[PowerupSpikeStrip] = spikeStripWordsAdded
 					}
-					wordsLeft[PowerupSpikeStrip] = spikeStripWordsAdded
 
 				case PowerupStickShift:
-					c.words = ObfuscateRange(c.words, powerupOffset, wordsStickShifted)
 					lidx := idx + powerupOffset
-					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(lidx),
-						words: c.words[lidx:],
+					if lidx < len(c.words) {
+						c.words = ObfuscateRange(c.words, powerupOffset, wordsStickShifted)
+						c.lobbyWrite <- UpdateWordsMessage{
+							idx:   uint32(lidx),
+							words: c.words[lidx:],
+						}
+						wordsLeft[PowerupStickShift] = wordsStickShifted
 					}
-					wordsLeft[PowerupStickShift] = wordsStickShifted
 
 				case PowerupTireBoot:
 					tireBootTimer.Stop()

@@ -9,7 +9,7 @@ import (
 
 func Serve() {
 	mux := routes()
-	port := os.Getenv("26_PORT")
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
