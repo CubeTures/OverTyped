@@ -25,8 +25,8 @@ let stage = 0
 let actualProgress = [0, 0, 0];
 let playerCount = 0;
 
-function incrementStage() {
-	stage++;
+function setStage(s: number) {
+	stage = s;
 }
 
 function setPlayerCount(p: number) {
@@ -64,6 +64,12 @@ function drawScene(
 
 	/* Stuff independent of current actor */
 	for (let i = 0; i < actors.length; i++) {
+        // console.log(actors[i].type)
+        // if (stage != 0 && actors[i].type == "Wall") {
+        //     let material = Object.values(actors[i].buffers.materials)[0]
+        //     material.Kd = [0, 0, 0]
+        //     material.Ks = [0, 0, 0]
+        // }
 		actors[i].modelMatrix = createModelMatrix(
 			gl,
 			stage,
@@ -89,7 +95,7 @@ function drawScene(
 	);
 	gl.uniform3fv(programInfo.uniformLocations.eye, new Float32Array(eye));
 
-	sendLights(gl, programInfo);
+	sendLights(gl, programInfo, stage == 0);
 	sendMaterials(gl, programInfo, actors);
 
 	/* Stuff dependent on current actor */
@@ -151,7 +157,7 @@ function drawScene(
 				{
 					wheelActor = actors[j]
 					//SETTING -> can change wheel speed here
-					const wheel_speedup = 10.0;
+					const wheel_speedup = stage == 2 ? 10.0 : 0.0;
 					drawCarWheels(gl, programInfo, wheelActor, curr.modelMatrix ?? glm.mat4.create(), cubeRotation, wheel_speedup)
 					break;
 				}
@@ -247,7 +253,9 @@ function createProjectionMatrix(
 		} else {
 			fieldOfView = toRadian(30);
 		}
-	}
+	} else if (stage == 2) {
+        fieldOfView = toRadian(30);
+    }
 	const aspect =
 		(gl.canvas as HTMLCanvasElement).clientWidth /
 		(gl.canvas as HTMLCanvasElement).clientHeight;
@@ -323,14 +331,13 @@ function createViewMatrix(
 }
 
 function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, wheelActor:Actor, carModelMatrix:glm.mat4, cubeRotation:number, wheel_speedup:number) {
-	console.log("here")
 	// These Attributes are the same for all wheels
 	setPositionAttribute(gl, wheelActor.buffers, programInfo);
 	setTextureAttribute(gl, wheelActor.buffers, programInfo);
 	setNormalAttribute(gl, wheelActor.buffers, programInfo);
 	setMaterialIndexAttribute(gl, wheelActor.buffers, programInfo);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wheelActor.buffers.indices); // Tell WebGL which indices to use to index the vertices
-	
+
 	// Texture is same for all wheels
 	if (wheelActor.texture != undefined) {
 		// Tell WebGL we want to affect texture unit 0
@@ -346,8 +353,7 @@ function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, whee
 	for(let i=0; i<4; i++) // Cars have 4 wheels
 	{
 		wheelActor.modelMatrix = glm.mat4.clone(carModelMatrix)
-		console.log(wheelActor)
-		
+
 		glm.mat4.translate(wheelActor.modelMatrix, wheelActor.modelMatrix, [0.80 * (i%2==0?-1:1), 0.35, 1.15 * (i<2?-1:1)]);
 		glm.mat4.rotate(wheelActor.modelMatrix, wheelActor.modelMatrix, delta, [1, 0, 0]);
 		if(i%2==1)
@@ -381,7 +387,7 @@ function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, whee
 
 
 //SETTING -> location of lights
-function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo) {
+function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo, light0on: boolean) {
 	const num_lights = 10;
 	var light0: Light = {
 		exists: true,
@@ -389,7 +395,7 @@ function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo) {
 		color: [0.5, 0.5, 0.5],
 		is_spotlight: true,
 		a: [0.0, -1.0, 0.0],
-		theta: (15.0 * Math.PI) / 180,
+		theta: ((light0on ? 15.0 : 8.0) * Math.PI) / 180,
 		alpha: 10.0,
 	};
 
@@ -739,4 +745,4 @@ function divideVec4(vec: glm.vec4, num: number): glm.vec4 {
 	return answer;
 }
 
-export { drawScene, incrementStage, setPlayerCount };
+export { drawScene, setStage, setPlayerCount };

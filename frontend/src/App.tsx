@@ -4,7 +4,7 @@ import TitlePage from "./components/pages/TitlePage";
 import { CurrentPage, usePage } from "./PageProvider";
 import { useEnter } from "./hooks/useEnter";
 import { main } from "./lib/render-start";
-import { incrementStage } from "./lib/draw-scene";
+import { setStage } from "./lib/draw-scene";
 import BlinkingText from "./components/BlinkingText";
 import FinishPage from "./components/pages/FinishPage";
 
@@ -48,13 +48,14 @@ function App() {
 
 	useEffect(() => {
 		if (ready) {
-			incrementStage();
+            setStage(1)
 		}
 	}, [ready]);
 
-	useEffect(() => {
-		if (page == CurrentPage.Game) incrementStage();
-	}, [page]);
+    useEffect(() => {
+        if (page == CurrentPage.Game)
+            setStage(2)
+    }, [page])
 
 	return (
 		<AnimationContext.Provider value={{ setReady, setAnimationEnd }}>
