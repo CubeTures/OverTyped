@@ -156,11 +156,13 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 		}
 		socket.sendSelect(powerups);
 	}, [powerups]);
-    useEffect(() => {
-        gamestate.progress = Object.entries(players)
-            .filter(([key, _]) => key != "" + currentPlayer)
-            .map(([_, value]) => value.progress - players[currentPlayer].progress);
-    }, [players]);
+	useEffect(() => {
+		gamestate.progress = Object.entries(players)
+			.filter(([key, _]) => key != "" + currentPlayer)
+			.map(
+				([_, value]) => value.progress - players[currentPlayer].progress
+			);
+	}, [players]);
 	return (
 		<PageContext.Provider
 			value={{

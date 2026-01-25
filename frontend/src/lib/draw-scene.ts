@@ -14,12 +14,12 @@ interface Light {
 	alpha?: number;
 }
 
-let lastEyeLoc:glm.vec3 = [0.0, 4, 8.5];
-let lastCenterLoc:glm.vec3 = [0.0, 0.0, 0.0];
-let lastLocalUpVal:glm.vec3 = [0.0, 1.0, 0.0];
-let prevCubeRotation:number = 0.0 // only update sometimes
-let prevCubeRotationAlways:number = 0.0 // updated every iteration
-let stage = 0
+let lastEyeLoc: glm.vec3 = [0.0, 4, 8.5];
+let lastCenterLoc: glm.vec3 = [0.0, 0.0, 0.0];
+let lastLocalUpVal: glm.vec3 = [0.0, 1.0, 0.0];
+let prevCubeRotation: number = 0.0; // only update sometimes
+let prevCubeRotationAlways: number = 0.0; // updated every iteration
+let stage = 0;
 
 // actual values
 let actualProgress = [0, 0, 0];
@@ -31,10 +31,8 @@ function setStage(s: number) {
 
 function setPlayerCount(p: number) {
 	playerCount = p;
-    console.log(playerCount)
+	console.log(playerCount);
 }
-
-
 
 function drawScene(
 	gl: WebGLRenderingContext,
@@ -64,12 +62,12 @@ function drawScene(
 
 	/* Stuff independent of current actor */
 	for (let i = 0; i < actors.length; i++) {
-        // console.log(actors[i].type)
-        // if (stage != 0 && actors[i].type == "Wall") {
-        //     let material = Object.values(actors[i].buffers.materials)[0]
-        //     material.Kd = [0, 0, 0]
-        //     material.Ks = [0, 0, 0]
-        // }
+		// console.log(actors[i].type)
+		// if (stage != 0 && actors[i].type == "Wall") {
+		//     let material = Object.values(actors[i].buffers.materials)[0]
+		//     material.Kd = [0, 0, 0]
+		//     material.Ks = [0, 0, 0]
+		// }
 		actors[i].modelMatrix = createModelMatrix(
 			gl,
 			stage,
@@ -104,8 +102,7 @@ function drawScene(
 			continue;
 
 		let curr = actors[i];
-		if(curr.type === "Wheel")
-			continue
+		if (curr.type === "Wheel") continue;
 
 		// Sending model and normal matrices
 		const normalMatrix = glm.mat4.create();
@@ -148,27 +145,31 @@ function drawScene(
 		}
 
 		// Drawing wheels on cars
-		if(curr.type==="Car")
-		{
-			let wheelActor:Actor;
-			for(let j=0; j<actors.length; j++)
-			{
-				if(actors[j].type == "Wheel")
-				{
-					wheelActor = actors[j]
+		if (curr.type === "Car") {
+			let wheelActor: Actor;
+			for (let j = 0; j < actors.length; j++) {
+				if (actors[j].type == "Wheel") {
+					wheelActor = actors[j];
 					//SETTING -> can change wheel speed here
 					const wheel_speedup = stage == 2 ? 10.0 : 0.0;
-					drawCarWheels(gl, programInfo, wheelActor, curr.modelMatrix ?? glm.mat4.create(), cubeRotation, wheel_speedup)
+					drawCarWheels(
+						gl,
+						programInfo,
+						wheelActor,
+						curr.modelMatrix ?? glm.mat4.create(),
+						cubeRotation,
+						wheel_speedup
+					);
 					break;
 				}
 			}
 		}
 	}
 
-	prevCubeRotationAlways = cubeRotation
+	prevCubeRotationAlways = cubeRotation;
 }
 
-const progressMult = 700
+const progressMult = 700;
 
 // SETTING -> can change transformations
 function createModelMatrix(
@@ -254,8 +255,8 @@ function createProjectionMatrix(
 			fieldOfView = toRadian(30);
 		}
 	} else if (stage == 2) {
-        fieldOfView = toRadian(30);
-    }
+		fieldOfView = toRadian(30);
+	}
 	const aspect =
 		(gl.canvas as HTMLCanvasElement).clientWidth /
 		(gl.canvas as HTMLCanvasElement).clientHeight;
@@ -330,7 +331,14 @@ function createViewMatrix(
 	return [glm.mat4.lookAt(viewMatrix, eye, center, localUp), eye];
 }
 
-function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, wheelActor:Actor, carModelMatrix:glm.mat4, cubeRotation:number, wheel_speedup:number) {
+function drawCarWheels(
+	gl: WebGLRenderingContext,
+	programInfo: ProgramInfo,
+	wheelActor: Actor,
+	carModelMatrix: glm.mat4,
+	cubeRotation: number,
+	wheel_speedup: number
+) {
 	// These Attributes are the same for all wheels
 	setPositionAttribute(gl, wheelActor.buffers, programInfo);
 	setTextureAttribute(gl, wheelActor.buffers, programInfo);
@@ -348,19 +356,39 @@ function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, whee
 		gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
 	}
 
-	let delta = cubeRotation*wheel_speedup;
+	let delta = cubeRotation * wheel_speedup;
 
-	for(let i=0; i<4; i++) // Cars have 4 wheels
-	{
-		wheelActor.modelMatrix = glm.mat4.clone(carModelMatrix)
+	for (
+		let i = 0;
+		i < 4;
+		i++ // Cars have 4 wheels
+	) {
+		wheelActor.modelMatrix = glm.mat4.clone(carModelMatrix);
 
-		glm.mat4.translate(wheelActor.modelMatrix, wheelActor.modelMatrix, [0.80 * (i%2==0?-1:1), 0.35, 1.15 * (i<2?-1:1)]);
-		glm.mat4.rotate(wheelActor.modelMatrix, wheelActor.modelMatrix, delta, [1, 0, 0]);
-		if(i%2==1)
-			glm.mat4.rotate(wheelActor.modelMatrix, wheelActor.modelMatrix, toRadian(180), [0, 1, 0]);
+		glm.mat4.translate(wheelActor.modelMatrix, wheelActor.modelMatrix, [
+			0.8 * (i % 2 == 0 ? -1 : 1),
+			0.35,
+			1.15 * (i < 2 ? -1 : 1),
+		]);
+		glm.mat4.rotate(
+			wheelActor.modelMatrix,
+			wheelActor.modelMatrix,
+			delta,
+			[1, 0, 0]
+		);
+		if (i % 2 == 1)
+			glm.mat4.rotate(
+				wheelActor.modelMatrix,
+				wheelActor.modelMatrix,
+				toRadian(180),
+				[0, 1, 0]
+			);
 
 		const normalMatrix = glm.mat4.create();
-		glm.mat4.invert(normalMatrix, wheelActor.modelMatrix ?? glm.mat4.create());
+		glm.mat4.invert(
+			normalMatrix,
+			wheelActor.modelMatrix ?? glm.mat4.create()
+		);
 		glm.mat4.transpose(normalMatrix, normalMatrix);
 		gl.uniformMatrix4fv(
 			programInfo.uniformLocations.modelMatrix,
@@ -381,13 +409,14 @@ function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, whee
 			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
 		}
 	}
-
 }
 
-
-
 //SETTING -> location of lights
-function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo, light0on: boolean) {
+function sendLights(
+	gl: WebGLRenderingContext,
+	programInfo: ProgramInfo,
+	light0on: boolean
+) {
 	const num_lights = 10;
 	var light0: Light = {
 		exists: true,

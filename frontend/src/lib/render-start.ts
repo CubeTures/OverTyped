@@ -28,7 +28,7 @@ interface Actor {
 	modelMatrix?: glm.mat4;
 	overrideTextureName?: string;
 	overrideNoTextureColor?: glm.vec3;
-	type:string;
+	type: string;
 }
 
 async function main(canvas: HTMLCanvasElement) {
@@ -132,20 +132,24 @@ async function main(canvas: HTMLCanvasElement) {
 		"wheel.obj",
 		"FREE_CAR_01.mtl"
 	);
-	if (carBuffers === undefined || cubeBuffers === undefined || wheelBuffer === undefined) {
+	if (
+		carBuffers === undefined ||
+		cubeBuffers === undefined ||
+		wheelBuffer === undefined
+	) {
 		alert("Buffers were not intialized!!!!!!!!!!!!11!!!!1");
 		return;
 	}
 
 	var actors: Actor[] = [];
-	actors.push({ buffers: carBuffers, type:"Car" });
-	actors.push({ buffers: carBuffers, type:"Car" });
+	actors.push({ buffers: carBuffers, type: "Car" });
+	actors.push({ buffers: carBuffers, type: "Car" });
 	actors[1].overrideTextureName = "002_COLOR_BASIC.png";
-	actors.push({ buffers: cubeBuffers,type:"Wall" });
+	actors.push({ buffers: cubeBuffers, type: "Wall" });
 	actors[2].overrideNoTextureColor = [10, 10, 10, 255];
-	actors.push({ buffers: carBuffers, type:"Car" });
-	actors.push({ buffers: carBuffers, type:"Car" });
-	actors.push({buffers: wheelBuffer, type:"Wheel"});
+	actors.push({ buffers: carBuffers, type: "Car" });
+	actors.push({ buffers: carBuffers, type: "Car" });
+	actors.push({ buffers: wheelBuffer, type: "Wheel" });
 
 	// Load texture based on the value in map_Kd. No texture defaults to blue
 	actors.forEach((actor) => {
@@ -155,11 +159,9 @@ async function main(canvas: HTMLCanvasElement) {
 		{
 			const texture_path: string = "/" + actor.overrideTextureName;
 			actor.texture = loadTexture(gl, texture_path);
-		} else if(actor.overrideNoTextureColor !== undefined)
-		{
+		} else if (actor.overrideNoTextureColor !== undefined) {
 			actor.texture = loadTexture(gl, "", actor.overrideNoTextureColor);
-		} 
-		else if (Object.keys(currMtl).length === 0) // No Texture
+		} else if (Object.keys(currMtl).length === 0) // No Texture
 		{
 			actor.texture = loadTexture(gl, "");
 		} else // Yes Texture
@@ -196,7 +198,11 @@ async function main(canvas: HTMLCanvasElement) {
 }
 
 // Initialize a texture and load an image. When the image finished loading copy it into the texture.
-function loadTexture(gl: WebGLRenderingContext, url: string, rgba: glm.vec4 = [0, 0, 255, 255]) {
+function loadTexture(
+	gl: WebGLRenderingContext,
+	url: string,
+	rgba: glm.vec4 = [0, 0, 255, 255]
+) {
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 

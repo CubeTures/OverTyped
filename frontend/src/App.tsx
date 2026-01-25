@@ -48,14 +48,13 @@ function App() {
 
 	useEffect(() => {
 		if (ready) {
-            setStage(1)
+			setStage(1);
 		}
 	}, [ready]);
 
-    useEffect(() => {
-        if (page == CurrentPage.Game)
-            setStage(2)
-    }, [page])
+	useEffect(() => {
+		if (page == CurrentPage.Game) setStage(2);
+	}, [page]);
 
 	return (
 		<AnimationContext.Provider value={{ setReady, setAnimationEnd }}>

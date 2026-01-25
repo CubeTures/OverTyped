@@ -3,15 +3,15 @@ import type { ProgramInfo, Actor } from "./render-start.ts";
 import { toRadian } from "./draw-scene.ts";
 
 const state = {
-    progress: [] as number[],
-    // stage: 'race' as 'orbit' | 'race',
+	progress: [] as number[],
+	// stage: 'race' as 'orbit' | 'race',
 };
 
 export default state;
 
 export function quadInterp(a: number, b: number, t: number): number {
-    const x = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    return (b - a) * x + a;
+	const x = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+	return (b - a) * x + a;
 }
 
 /*

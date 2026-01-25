@@ -10,7 +10,7 @@ function FinishPage() {
 		console.log("here");
 		setReady(false);
 		setAnimationEnd(false);
-        setPlayers({});
+		setPlayers({});
 		setName("");
 	}
 
