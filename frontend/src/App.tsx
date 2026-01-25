@@ -9,7 +9,17 @@ import BlinkingText from "./components/BlinkingText";
 import FinishPage from "./components/pages/FinishPage";
 import PixelSnow from "@/components/PixelSnow";
 
-export const AnimationContext = createContext({});
+export const AnimationContext = createContext<{
+	visible: boolean;
+	setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+	setReady: React.Dispatch<React.SetStateAction<boolean>>;
+	setAnimationEnd: React.Dispatch<React.SetStateAction<boolean>>;
+}>({
+	visible: false,
+	setVisible: () => {},
+	setReady: () => {},
+	setAnimationEnd: () => {},
+});
 
 function App() {
 	const { page, players, currentPlayer } = usePage();
@@ -68,7 +78,12 @@ function App() {
 
 	return (
 		<AnimationContext.Provider
-			value={{ visible, setVisible, setReady, setAnimationEnd, setParticles }}
+			value={{
+				visible,
+				setVisible,
+				setReady,
+				setAnimationEnd,
+			}}
 		>
 			<div className="w-dvw h-dvh flex flex-col">
 				<div
