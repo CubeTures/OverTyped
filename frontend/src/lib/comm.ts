@@ -171,6 +171,23 @@ function serializeClientMessage(payload: ClientMessage): ArrayBuffer {
 			view.setUint8(0, opcode);
 			return buffer;
 
+		case ClientOp.SelectPowerup:
+			buffer = new ArrayBuffer(1 + payload.selectedPowerups.length);
+			view = new DataView(buffer);
+			view.setUint8(0, opcode);
+			for (let i = 0; i < payload.selectedPowerups.length; ++i) {
+				view.setUint8(1 + i, payload.selectedPowerups[i]);
+			}
+			return buffer;
+
+		case ClientOp.PurchasePowerup:
+			buffer = new ArrayBuffer(1 + 2);
+			view = new DataView(buffer);
+			view.setUint8(0, opcode);
+			view.setUint8(1, payload.powerupId);
+			view.setUint8(2, payload.targetPlayer);
+			return buffer;
+
 		default:
 			throw new Error("Unknown opcode: " + opcode);
 	}
@@ -204,11 +221,11 @@ function parseEffectId(view: DataView, offset: number): [PowerupId, number] {
 }
 
 function parseU8(view: DataView, offset: number): [number, number] {
-	return [view.getUint8(offset), 1];
+	return [view.getUint8(offset), offset + 1];
 }
 
 function parseU32(view: DataView, offset: number): [number, number] {
-	return [view.getUint32(offset), 4];
+	return [view.getUint32(offset), offset + 4];
 }
 
 function parseList<T>(

@@ -42,7 +42,6 @@ type PageContextType = {
 	words: string[];
 	powerups: PowerupId[];
 	setPowerups: React.Dispatch<React.SetStateAction<PowerupId[]>>;
-	setPurchase: React.Dispatch<React.SetStateAction<Purchase>>;
 	purchaseSuccess: PurchaseSuccess;
 };
 
@@ -128,7 +127,6 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 		{} as PurchaseSuccess
 	);
 	const [powerups, setPowerups] = useState([] as PowerupId[]);
-	const [purchase, setPurchase] = useState({} as Purchase);
 	const [currentPlayer, setCurrentPlayer] = useState(0);
 	useEffect(() => {
 		console.log("name: '" + name + "'");
@@ -148,7 +146,9 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 		return () => {};
 	}, [name]);
 	useEffect(() => {
-		if (powerups.length === undefined) {
+		console.log("select effect: ", powerups);
+		if (powerups === undefined || powerups.length === 0) {
+			console.log("abort select");
 			return;
 		}
 		socket.sendSelect(powerups);
@@ -166,7 +166,6 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 				purchaseSuccess,
 				powerups,
 				setPowerups,
-				setPurchase,
 				currentPlayer,
 			}}
 		>
