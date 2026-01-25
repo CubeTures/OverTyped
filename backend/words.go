@@ -317,7 +317,7 @@ func repeatChars(s string) string {
 	var b strings.Builder
 
 	for _, r := range s {
-		repeat := rand.Intn(5) + 1 // 1..5
+		repeat := rand.Intn(3) + 1 // 1..5
 		for range repeat {
 			b.WriteRune(r)
 		}
