@@ -30,7 +30,7 @@ interface Actor {
 }
 
 async function main(canvas: HTMLCanvasElement) {
-	// Setting up
+	// Gradbbing gl
 	const gl: WebGLRenderingContext | null = canvas.getContext("webgl");
 
 	if (gl === null) {
@@ -122,7 +122,8 @@ async function main(canvas: HTMLCanvasElement) {
 	);
 	const cubeBuffers: InitBufferReturn | undefined = await initBuffers(
 		gl,
-		"cube.obj"
+		"cube.obj",
+		"Floor.mtl"
 	);
 	if (carBuffers === undefined || cubeBuffers === undefined) {
 		alert("Buffers were not intialized!!!!!!!!!!!!11!!!!1");

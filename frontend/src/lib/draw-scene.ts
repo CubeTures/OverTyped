@@ -25,7 +25,7 @@ function drawScene(
 	gl.depthFunc(gl.LEQUAL); // Near things obscure far things
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas
 
-	const [viewMatrix, eye] = createViewMatrix();
+	const [viewMatrix, eye] = createViewMatrix(cubeRotation,0);
 	const projectionMatrix = createProjectionMatrix(gl);
 
 	/* Stuff independent of current actor */
@@ -51,8 +51,13 @@ function drawScene(
 	sendLights(gl, programInfo);
 	sendMaterials(gl, programInfo, actors);
 
+	let stage = 0
+	
 	/* Stuff dependent on current actor */
 	for (let i = 0; i < actors.length; i++) {
+		if(stage==0 && (i==1))
+			continue;
+
 		let curr = actors[i];
 		// Sending model and normal matrices
 		const normalMatrix = glm.mat4.create();
@@ -107,16 +112,18 @@ function createModelMatrix(
 	if (stage == 0) {
 		// Car 1
 		if (iteration == 0) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [-0.0, -2, -7.0]);
-			glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
+			glm.mat4.translate(modelMatrix, modelMatrix, [0.0, 0, 0]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
 		}
 		// Car 2
 		else if (iteration == 1) {
 			glm.mat4.translate(modelMatrix, modelMatrix, [-3.0, 2, -7.0]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
+		// Floor
 		} else if (iteration == 2) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [3.0, -2, -5.0]);
-			glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
+			glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
+			glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
+			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 		}
 	}
 	return modelMatrix;
@@ -142,12 +149,26 @@ function createProjectionMatrix(gl: WebGLRenderingContext): glm.mat4 {
 }
 
 // SETTING -> can change location and orientation of camera
-function createViewMatrix(): [glm.mat4, number[]] {
-	const eye = [0.0, 0, 4.0];
-	const lookAt = [0.0, 0.0, 0.0];
-	const up = [0.0, 1.0, 0.0];
+function createViewMatrix(cubeRotation:number,stage: number): [glm.mat4, glm.vec3] {
+	cubeRotation*=10
+	let eye:glm.vec3 = [0.0, 4, 8.5];
+	const up:glm.vec3 = [0.0, 1.0, 0.0];
+	let center:glm.vec3 = [0.0, 0.0, 0.0];
+	let localUp:glm.vec3 = [0.0, 0.0, 0.0];
+
+	// Rotation
+	// [eye, localUp] = cameraRotate(cubeRotation, 0, eye, up, center);
+	// translation
+	// [eye, center] = cameraTranslate(cubeRotation, cubeRotation, eye, localUp, center);
+
+	if(stage==0)
+	{
+		eye = [0.0, 5, 8.5];
+		[eye, localUp] = cameraRotate(cubeRotation, 0, eye, up, center);
+	}
+
 	const viewMatrix = glm.mat4.create();
-	return [glm.mat4.lookAt(viewMatrix, eye, lookAt, up), eye];
+	return [glm.mat4.lookAt(viewMatrix, eye, center, localUp), eye];
 }
 
 //SETTING -> location of lights
@@ -155,12 +176,17 @@ function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo) {
 	const num_lights = 10;
 	var light0: Light = {
 		exists: true,
-		position: [20.0, 0.0, -5.0],
+		position: [0.0, 15.0, 0.0],
 		color: [0.5, 0.5, 0.5],
-		is_spotlight: false,
-	}; //true, [0.0, 0.0, -3.0], 0.1, 250];
+		is_spotlight: true,
+		a: [0.0, -1.0, 0.0],
+		theta: (15.0 * Math.PI)/ 180,
+		alpha: 10.0
+	};
+
+
 	var light1: Light = {
-		exists: true,
+		exists: false,
 		position: [0.0, 10.0, 0.0],
 		color: [0.5, 0.5, 0.5],
 		is_spotlight: false,
@@ -344,6 +370,70 @@ function setMaterialIndexAttribute(
 		offset
 	);
 	gl.enableVertexAttribArray(programInfo.attribLocations.materialIndex);
+}
+
+function cameraRotate(deltaX:number, deltaY:number, eye:glm.vec3, up:glm.vec3, center:glm.vec3): [glm.vec3, glm.vec3]
+{
+	let wVector:glm.vec3 = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
+	let localRight:glm.vec3 = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
+	let localUp:glm.vec3 = glm.vec3.cross([0,0,0],wVector, localRight);
+
+	let a:glm.vec3 = glm.vec3.subtract([0,0,0],eye, center);
+	let rotMatrixLocalRight:glm.mat3 = glm.mat4.rotate(glm.mat4.create(), glm.mat4.create(), toRadian(15.0 * deltaY * 0.1), localRight);
+	let rotMatrixGlobalUp:glm.mat3 = glm.mat4.rotate(glm.mat4.create(), glm.mat4.create(), toRadian(15.0 * deltaX * 0.1), up);
+	let aNew:glm.vec3 = glm.vec3.transformMat4(glm.vec3.create(), a, glm.mat4.multiply(glm.mat4.create(),rotMatrixGlobalUp,rotMatrixLocalRight));//rotMatrixGlobalUp  * rotMatrixLocalRight * a;
+	localUp = glm.vec3.transformMat4(glm.vec3.create(), localUp, glm.mat4.multiply(glm.mat4.create(),rotMatrixGlobalUp,rotMatrixLocalRight));//rotMatrixGlobalUp  * rotMatrixLocalRight * localUp;
+	glm.vec3.add(eye, center, (aNew));
+	wVector = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
+	localRight = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
+
+
+	// let wVector:glm.vec3 = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
+	// let localRight:glm.vec3 = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
+	// let localUp:glm.vec3 = glm.vec3.cross([0,0,0],wVector, localRight);
+
+	// let a:glm.vec3 = glm.vec3.subtract([0,0,0],eye, center);
+	// let rotMatrixLocalRight:glm.mat3 = glm.mat4.rotate(glm.mat4.create(), glm.mat4.create(), toRadian(15.0 * deltaY * 0.1), localRight);
+	// let rotMatrixGlobalUp:glm.mat3 = glm.mat4.rotate(glm.mat4.create(), glm.mat4.create(), toRadian(15.0 * deltaX * 0.1), up);
+	// let aNew:glm.vec3 = glm.vec3.transformMat3(glm.vec3.create(),glm.vec3.transformMat4(glm.vec3.create(), a, rotMatrixLocalRight),rotMatrixGlobalUp);//rotMatrixGlobalUp  * rotMatrixLocalRight * a;
+	// localUp = glm.vec3.transformMat3(glm.vec3.create(),glm.vec3.transformMat4(glm.vec3.create(), localUp, rotMatrixLocalRight),rotMatrixGlobalUp)
+	// glm.vec3.add(eye, center, (aNew));
+	return [eye, localUp];
+}
+
+
+function cameraTranslate(deltaX:number, deltaY:number, eye:glm.vec3, up:glm.vec3, center:glm.vec3): [glm.vec3, glm.vec3]
+{
+	let wVector:glm.vec3 = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
+	let localRight:glm.vec3 = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
+	let localUp:glm.vec3 = glm.vec3.cross([0,0,0],wVector, localRight);
+	
+	glm.vec3.add(eye,eye,multiplyVec(localRight, deltaX * 0.01));
+	glm.vec3.add(center,center,multiplyVec(localRight, deltaX * 0.01));
+
+	glm.vec3.add(eye,eye,multiplyVec(localUp, deltaY * 0.01));
+	glm.vec3.add(center,center,multiplyVec(localUp, deltaY * 0.01));
+
+	return [eye, center];
+}
+
+
+
+function toRadian(degrees:number)
+{
+	return (degrees*Math.PI)/180.0
+}
+
+function multiplyVec(vec:glm.vec3, num:number):glm.vec3
+{
+	const answer = [vec[0]*num, vec[1]*num, vec[2]*num]
+	return answer
+}
+
+function divideVec(vec:glm.vec3, num:number):glm.vec3
+{
+	const answer = [vec[0]/num, vec[1]/num, vec[2]/num]
+	return answer
 }
 
 export { drawScene };

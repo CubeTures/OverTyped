@@ -181,8 +181,10 @@ function getFragmentShaderCode() {
           highp vec3 kdPart = kd * max(0.0, dot(L, normal));
 
           highp vec3 R = normalize(2.0 * dot(normal, L) * normal - L);
-          highp vec3 ksPart = ks * pow(max(0.0, dot(R,E)),Ns);
-
+          highp vec3 ksPart = ks;
+          if(Ns!=0.0)
+            ksPart*= pow(max(0.0, dot(R,E)), Ns);
+          
           // Doing Spotlight Calculations if the light is a spotlight
           highp float si = 1.0;
           if(lights[i].is_spotlight)
