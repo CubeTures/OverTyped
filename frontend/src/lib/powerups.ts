@@ -12,48 +12,41 @@ export const POWERUP_INFO = {
 		id: Powerup.SpikeStrip,
 		name: "Spike Strip",
 		icon: spike,
-		action: "passive",
 		description: "Add 5 additional words to opponent",
 	},
 	[Powerup.StickShift]: {
 		id: Powerup.StickShift,
 		name: "Stick Shift",
-		action: "passive",
 		icon: shift,
 		description: "Add punctuation and special characters for 10 words",
 	},
 	[Powerup.Fog]: {
 		id: Powerup.Fog,
 		name: "Fog",
-		action: "passive",
 		icon: fog,
 		description: "Opponent only sees 1 word for 10 seconds",
 	},
 	[Powerup.IcyRoads]: {
 		id: Powerup.IcyRoads,
 		name: "Icy Roads",
-		action: "passive",
 		icon: snow,
 		description: "Add additional characters to next 10 words",
 	},
 	[Powerup.TireBoot]: {
 		id: Powerup.TireBoot,
 		name: "Tire Boot",
-		action: "active",
 		icon: tire,
 		description: "Lock opponent ability for 10 seconds",
 	},
 	[Powerup.Scrambler]: {
 		id: Powerup.Scrambler,
 		name: "Scrambler",
-		action: "active",
 		icon: scramble,
 		description: "Scramble opponent's next 10 words",
 	},
 	[Powerup.RearViewMirror]: {
 		id: Powerup.RearViewMirror,
 		name: "Rear View Mirror",
-		action: "active",
 		icon: mirror,
 		description: "Reflect other skills back for 10 seconds",
 	},
@@ -62,7 +55,6 @@ export const POWERUP_INFO = {
 	{
 		id: PowerupId;
 		name: string;
-		action: "passive" | "active";
 		icon: string;
 		description: string;
 	}

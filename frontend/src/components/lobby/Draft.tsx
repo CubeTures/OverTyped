@@ -110,12 +110,6 @@ function Draft() {
 										src={POWERUP_INFO[pow].icon}
 										className="w-full h-content"
 									/>
-									{POWERUP_INFO[pow].action === "active" && (
-										<img
-											className="absolute bottom-4 right-4 brightness-70"
-											src={active}
-										/>
-									)}
 								</div>
 
 								<p className="text-center">

@@ -70,11 +70,7 @@ export default function Typing({ words }: Props) {
 						target,
 						POWERUP_INFO[powerups[selectedPowerup]]
 					);
-					if (
-						target !== undefined &&
-						POWERUP_INFO[powerups[selectedPowerup]].action ===
-							"active"
-					) {
+					if (target !== undefined) {
 						console.log("SEND IT");
 						socket.sendPurchase({
 							powerupId:
