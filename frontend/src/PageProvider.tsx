@@ -147,7 +147,7 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 	}, [name]);
 	useEffect(() => {
 		console.log("select effect: ", powerups);
-		if (powerups === undefined || powerups.length === 0) {
+		if (powerups === undefined || powerups.length !== 2) {
 			console.log("abort select");
 			return;
 		}
