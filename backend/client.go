@@ -248,9 +248,10 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 
 				case PowerupIcyRoads:
 					c.words = RepeatCharsRange(c.words, powerupOffset, wordsIced)
+					lidx := idx + powerupOffset
 					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(idx + 1),
-						words: c.words,
+						idx:   uint32(lidx),
+						words: c.words[lidx:],
 					}
 					wordsLeft[PowerupIcyRoads] = wordsIced
 
@@ -260,25 +261,28 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 
 				case PowerupScrambler:
 					c.words = ScrambleRange(c.words, powerupOffset, wordsScrambled)
+					lidx := idx + powerupOffset
 					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(idx + 1),
-						words: c.words,
+						idx:   uint32(lidx),
+						words: c.words[lidx:],
 					}
 					wordsLeft[PowerupScrambler] = wordsScrambled
 
 				case PowerupSpikeStrip:
 					c.words = append(c.words, RandomWords(wordsEnglish, spikeStripWordsAdded)...)
+					lidx := idx + powerupOffset
 					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(idx + 1),
-						words: c.words,
+						idx:   uint32(lidx),
+						words: c.words[lidx:],
 					}
 					wordsLeft[PowerupSpikeStrip] = spikeStripWordsAdded
 
 				case PowerupStickShift:
 					c.words = ObfuscateRange(c.words, powerupOffset, wordsStickShifted)
+					lidx := idx + powerupOffset
 					c.lobbyWrite <- UpdateWordsMessage{
-						idx:   uint32(idx + 1),
-						words: c.words,
+						idx:   uint32(lidx),
+						words: c.words[lidx:],
 					}
 					wordsLeft[PowerupStickShift] = wordsStickShifted
 
