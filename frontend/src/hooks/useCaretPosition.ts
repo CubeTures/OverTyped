@@ -1,4 +1,4 @@
-import { type RefObject, useLayoutEffect, useRef, useState } from "react";
+import { type RefObject, useLayoutEffect, useRef } from "react";
 
 export function useCaretPosition(
 	testRef: RefObject<HTMLDivElement | null>,

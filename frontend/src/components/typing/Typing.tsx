@@ -61,7 +61,7 @@ export default function Typing({ words }: Props) {
 			}
 		};
 		document.addEventListener("keydown", onKeyDown);
-		return () => document.addEventListener("keydown", onKeyDown);
+		return () => document.removeEventListener("keydown", onKeyDown);
 	}, []);
 
 	function refocus() {
