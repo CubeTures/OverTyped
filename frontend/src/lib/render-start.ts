@@ -27,6 +27,7 @@ interface Actor {
 	texture?: WebGLTexture;
 	modelMatrix?: glm.mat4;
 	overrideTextureName?: string;
+	overrideNoTextureColor?: glm.vec3;
 }
 
 async function main(canvas: HTMLCanvasElement) {
@@ -135,6 +136,7 @@ async function main(canvas: HTMLCanvasElement) {
 	actors.push({ buffers: carBuffers });
 	actors[1].overrideTextureName = "002_COLOR_BASIC.png";
 	actors.push({ buffers: cubeBuffers });
+	actors[2].overrideNoTextureColor = [10, 10, 10, 255];
 
 	// Load texture based on the value in map_Kd. No texture defaults to blue
 	actors.forEach((actor) => {
@@ -144,7 +146,11 @@ async function main(canvas: HTMLCanvasElement) {
 		{
 			const texture_path: string = "/" + actor.overrideTextureName;
 			actor.texture = loadTexture(gl, texture_path);
-		} else if (Object.keys(currMtl).length === 0) // No Texture
+		} else if(actor.overrideNoTextureColor !== undefined)
+		{
+			actor.texture = loadTexture(gl, "", actor.overrideNoTextureColor);
+		} 
+		else if (Object.keys(currMtl).length === 0) // No Texture
 		{
 			actor.texture = loadTexture(gl, "");
 		} else // Yes Texture
@@ -181,7 +187,7 @@ async function main(canvas: HTMLCanvasElement) {
 }
 
 // Initialize a texture and load an image. When the image finished loading copy it into the texture.
-function loadTexture(gl: WebGLRenderingContext, url: string) {
+function loadTexture(gl: WebGLRenderingContext, url: string, rgba: glm.vec4 = [0, 0, 255, 255]) {
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -197,7 +203,8 @@ function loadTexture(gl: WebGLRenderingContext, url: string) {
 	const border = 0;
 	const srcFormat = gl.RGBA;
 	const srcType = gl.UNSIGNED_BYTE;
-	const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+	const pixel = new Uint8Array(rgba); // opaque blue
+	// console.log("pixel " + pixel);
 	gl.texImage2D(
 		gl.TEXTURE_2D,
 		level,
