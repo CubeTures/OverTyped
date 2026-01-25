@@ -62,12 +62,12 @@ function drawScene(
 
 	/* Stuff independent of current actor */
 	for (let i = 0; i < actors.length; i++) {
-		// console.log(actors[i].type)
-		// if (stage != 0 && actors[i].type == "Wall") {
-		//     let material = Object.values(actors[i].buffers.materials)[0]
-		//     material.Kd = [0, 0, 0]
-		//     material.Ks = [0, 0, 0]
-		// }
+        if (stage != 0 && actors[i].type == "Floor") {
+            let material = Object.values(actors[i].buffers.materials)[0]
+            material.Kd = [0, 0, 0]
+            material.Ks = [0, 0, 0]
+			material.Ka = [0, 0, 0]
+        }
 		actors[i].modelMatrix = createModelMatrix(
 			gl,
 			stage,
@@ -422,7 +422,7 @@ function sendLights(
 		exists: true,
 		position: [0.0, 15.0, 0.0],
 		color: [0.5, 0.5, 0.5],
-		is_spotlight: true,
+		is_spotlight: light0on,
 		a: [0.0, -1.0, 0.0],
 		theta: ((light0on ? 15.0 : 8.0) * Math.PI) / 180,
 		alpha: 10.0,
