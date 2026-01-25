@@ -30,7 +30,6 @@ function setStage(s: number) {
 
 function setPlayerCount(p: number) {
 	playerCount = p;
-	console.log(playerCount);
 }
 
 function drawScene(
@@ -41,7 +40,7 @@ function drawScene(
 	deltaTime: number
 ) {
 	// SETTING -> if want different background, change here
-	gl.clearColor(100/255, 132/255, 176/255, 1.0); // Set Background: rgb, transparency
+	gl.clearColor(100 / 255, 132 / 255, 176 / 255, 1.0); // Set Background: rgb, transparency
 	gl.clearDepth(1.0); // Clear everything
 	gl.enable(gl.DEPTH_TEST); // Enable depth testing
 	gl.depthFunc(gl.LEQUAL); // Near things obscure far things
@@ -50,23 +49,29 @@ function drawScene(
 	const projectionMatrix = createProjectionMatrix(gl, cubeRotation, stage);
 	const [viewMatrix, eye] = createViewMatrix(cubeRotation, stage);
 
-	while (gamestate.progress.length < 3) gamestate.progress.push(0);
+	if (stage == 1) {
+		while (gamestate.progress.length < 3) gamestate.progress.push(0);
+	}
 
-	let diffProgress: glm.vec3 = [0, 0, 0];
-	glm.vec3.subtract(diffProgress, gamestate.progress, actualProgress);
+	if (stage == 2) {
+		while (gamestate.progress.length < 3) gamestate.progress.push(0);
 
-	let dp = multiplyVec(divideVec(diffProgress, deltaTime), 0.0001);
+		let diffProgress: glm.vec3 = [0, 0, 0];
+		glm.vec3.subtract(diffProgress, gamestate.progress, actualProgress);
 
-	glm.vec3.add(actualProgress, actualProgress, dp);
+		let dp = multiplyVec(divideVec(diffProgress, deltaTime), 0.0001);
+
+		glm.vec3.add(actualProgress, actualProgress, dp);
+	}
 
 	/* Stuff independent of current actor */
 	for (let i = 0; i < actors.length; i++) {
-        if (stage != 0 && actors[i].type == "Floor") {
-            let material = Object.values(actors[i].buffers.materials)[0]
-            material.Kd = [0, 0, 0]
-            material.Ks = [0, 0, 0]
-			material.Ka = [0, 0, 0]
-        }
+		if (stage != 0 && actors[i].type == "Floor") {
+			let material = Object.values(actors[i].buffers.materials)[0];
+			material.Kd = [0, 0, 0];
+			material.Ks = [0, 0, 0];
+			material.Ka = [0, 0, 0];
+		}
 		actors[i].modelMatrix = createModelMatrix(
 			gl,
 			stage,
@@ -97,8 +102,7 @@ function drawScene(
 
 	/* Stuff dependent on current actor */
 	for (let i = 0; i < actors.length; i++) {
-		if ((stage == 0 || stage == 1) && (i == 1 || i == 3 || i == 4))
-			continue;
+		if (stage == 0 && (i == 1 || i == 3 || i == 4)) continue;
 
 		let curr = actors[i];
 		if (curr.type === "Wheel") continue;
@@ -164,7 +168,6 @@ function drawScene(
 			}
 		}
 	}
-
 }
 
 const progressMult = 700;
@@ -180,8 +183,7 @@ function createModelMatrix(
 ): glm.mat4 {
 	const modelMatrix = glm.mat4.create();
 	// Floor
-	if(iteration == 2)
-	{
+	if (iteration == 2) {
 		glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
 		glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
 	}
@@ -194,9 +196,30 @@ function createModelMatrix(
 		}
 		// Car 2
 		else if (iteration == 1) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [-3.0, 2, -7.0]);
-			glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
-			// Floor
+			glm.mat4.translate(modelMatrix, modelMatrix, [
+				-3,
+				playerCount >= 1 ? 0 : -100,
+				-progress[0] * progressMult,
+			]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
+		}
+		// Car 3
+		else if (iteration == 3) {
+			glm.mat4.translate(modelMatrix, modelMatrix, [
+				-6,
+				playerCount >= 2 ? 0 : -100,
+				-progress[1] * progressMult,
+			]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
+		}
+		// Car 4
+		else if (iteration == 4) {
+			glm.mat4.translate(modelMatrix, modelMatrix, [
+				-9,
+				playerCount >= 3 ? 0 : -100,
+				-progress[2] * progressMult,
+			]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
 		}
 	} else if (stage == 2) {
 		// Car 1
@@ -428,9 +451,9 @@ function sendLights(
 
 	let modelMatrix2 = glm.mat4.create();
 	glm.mat4.translate(modelMatrix2, modelMatrix2, [
-				-3,
-				playerCount >= 1 ? 0 : -100,
-				-progress[0] * progressMult,
+		-3,
+		playerCount >= 1 ? 0 : -100,
+		-progress[0] * progressMult,
 	]);
 	let modelMatrix3 = glm.mat4.create();
 	glm.mat4.translate(modelMatrix3, modelMatrix3, [
@@ -444,7 +467,6 @@ function sendLights(
 		playerCount >= 3 ? 0 : -100,
 		-progress[2] * progressMult,
 	]);
-
 
 	var light1: Light = {
 		exists: true,
@@ -465,26 +487,47 @@ function sendLights(
 		is_spotlight: false,
 	};
 	var light4: Light = {
-		exists: false
+		exists: false,
 	};
 
-	if(light1.position===undefined)
-		return
-	let light1Temp:glm.vec4 = [light1.position[0], light1.position[1], light1.position[2]]
-	glm.vec4.transformMat4(light1Temp,light1Temp,modelMatrix2)
-	light1.position = [light1Temp[0]/light1Temp[3],light1Temp[1]/light1Temp[3],light1Temp[2]/light1Temp[3]]
+	if (light1.position === undefined) return;
+	let light1Temp: glm.vec4 = [
+		light1.position[0],
+		light1.position[1],
+		light1.position[2],
+	];
+	glm.vec4.transformMat4(light1Temp, light1Temp, modelMatrix2);
+	light1.position = [
+		light1Temp[0] / light1Temp[3],
+		light1Temp[1] / light1Temp[3],
+		light1Temp[2] / light1Temp[3],
+	];
 
-	if(light2.position===undefined)
-		return
-	let light2Temp:glm.vec4 = [light2.position[0], light2.position[1], light2.position[2]]
-	glm.vec4.transformMat4(light2Temp,light2Temp,modelMatrix2)
-	light2.position = [light2Temp[0]/light2Temp[3],light2Temp[1]/light2Temp[3],light2Temp[2]/light2Temp[3]]
+	if (light2.position === undefined) return;
+	let light2Temp: glm.vec4 = [
+		light2.position[0],
+		light2.position[1],
+		light2.position[2],
+	];
+	glm.vec4.transformMat4(light2Temp, light2Temp, modelMatrix2);
+	light2.position = [
+		light2Temp[0] / light2Temp[3],
+		light2Temp[1] / light2Temp[3],
+		light2Temp[2] / light2Temp[3],
+	];
 
-	if(light3.position===undefined)
-		return
-	let light3Temp:glm.vec4 = [light3.position[0], light3.position[1], light3.position[2]]
-	glm.vec4.transformMat4(light3Temp,light3Temp,modelMatrix2)
-	light3.position = [light3Temp[0]/light3Temp[3],light3Temp[1]/light3Temp[3],light3Temp[2]/light3Temp[3]]
+	if (light3.position === undefined) return;
+	let light3Temp: glm.vec4 = [
+		light3.position[0],
+		light3.position[1],
+		light3.position[2],
+	];
+	glm.vec4.transformMat4(light3Temp, light3Temp, modelMatrix2);
+	light3.position = [
+		light3Temp[0] / light3Temp[3],
+		light3Temp[1] / light3Temp[3],
+		light3Temp[2] / light3Temp[3],
+	];
 
 	var lights: Light[] = [light0, light1, light2, light3, light4];
 
