@@ -17,8 +17,7 @@ interface Light {
 let lastEyeLoc: glm.vec3 = [0.0, 4, 8.5];
 let lastCenterLoc: glm.vec3 = [0.0, 0.0, 0.0];
 let lastLocalUpVal: glm.vec3 = [0.0, 1.0, 0.0];
-let prevCubeRotation: number = 0.0; // only update sometimes
-let prevCubeRotationAlways: number = 0.0; // updated every iteration
+let prevCubeRotation: number = 0.0;
 let stage = 0;
 
 // actual values
@@ -93,7 +92,7 @@ function drawScene(
 	);
 	gl.uniform3fv(programInfo.uniformLocations.eye, new Float32Array(eye));
 
-	sendLights(gl, programInfo, stage == 0);
+	sendLights(gl, programInfo, stage == 0, actualProgress, playerCount);
 	sendMaterials(gl, programInfo, actors);
 
 	/* Stuff dependent on current actor */
@@ -166,7 +165,6 @@ function drawScene(
 		}
 	}
 
-	prevCubeRotationAlways = cubeRotation;
 }
 
 const progressMult = 700;
@@ -181,6 +179,13 @@ function createModelMatrix(
 	playerCount: number
 ): glm.mat4 {
 	const modelMatrix = glm.mat4.create();
+	// Floor
+	if(iteration == 2)
+	{
+		glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
+		glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
+	}
+
 	if (stage == 0 || stage == 1) {
 		// Car 1
 		if (iteration == 0) {
@@ -192,15 +197,10 @@ function createModelMatrix(
 			glm.mat4.translate(modelMatrix, modelMatrix, [-3.0, 2, -7.0]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 			// Floor
-		} else if (iteration == 2) {
-			glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
-			glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
-			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 		}
 	} else if (stage == 2) {
 		// Car 1
 		if (iteration == 0) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [0.0, 0, 0]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
 		}
 		// Car 2
@@ -212,7 +212,7 @@ function createModelMatrix(
 			]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
 		}
-		// Car 2
+		// Car 3
 		else if (iteration == 3) {
 			glm.mat4.translate(modelMatrix, modelMatrix, [
 				-6,
@@ -221,7 +221,7 @@ function createModelMatrix(
 			]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
 		}
-		// Car 2
+		// Car 4
 		else if (iteration == 4) {
 			glm.mat4.translate(modelMatrix, modelMatrix, [
 				-9,
@@ -229,10 +229,6 @@ function createModelMatrix(
 				-progress[2] * progressMult,
 			]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
-		} else if (iteration == 2) {
-			glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
-			glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
-			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 		}
 	}
 	return modelMatrix;
@@ -415,7 +411,9 @@ function drawCarWheels(
 function sendLights(
 	gl: WebGLRenderingContext,
 	programInfo: ProgramInfo,
-	light0on: boolean
+	light0on: boolean,
+	progress: number[],
+	playerCount: number
 ) {
 	const num_lights = 10;
 	var light0: Light = {
@@ -428,15 +426,67 @@ function sendLights(
 		alpha: 10.0,
 	};
 
+	let modelMatrix2 = glm.mat4.create();
+	glm.mat4.translate(modelMatrix2, modelMatrix2, [
+				-3,
+				playerCount >= 1 ? 0 : -100,
+				-progress[0] * progressMult,
+	]);
+	let modelMatrix3 = glm.mat4.create();
+	glm.mat4.translate(modelMatrix3, modelMatrix3, [
+		-6,
+		playerCount >= 2 ? 0 : -100,
+		-progress[1] * progressMult,
+	]);
+	let modelMatrix4 = glm.mat4.create();
+	glm.mat4.translate(modelMatrix4, modelMatrix4, [
+		-9,
+		playerCount >= 3 ? 0 : -100,
+		-progress[2] * progressMult,
+	]);
+
+
 	var light1: Light = {
-		exists: false,
-		position: [0.0, 10.0, 0.0],
+		exists: true,
+		position: [0.0, 15.0, 0.0],
 		color: [0.5, 0.5, 0.5],
 		is_spotlight: false,
 	};
-	var light2: Light = { exists: false };
+	var light2: Light = {
+		exists: true,
+		position: [0.0, 15.0, 0.0],
+		color: [0.5, 0.5, 0.5],
+		is_spotlight: false,
+	};
+	var light3: Light = {
+		exists: true,
+		position: [0.0, 15.0, 0.0],
+		color: [0.5, 0.5, 0.5],
+		is_spotlight: false,
+	};
+	var light4: Light = {
+		exists: false
+	};
 
-	var lights: Light[] = [light0, light1, light2];
+	if(light1.position===undefined)
+		return
+	let light1Temp:glm.vec4 = [light1.position[0], light1.position[1], light1.position[2]]
+	glm.vec4.transformMat4(light1Temp,light1Temp,modelMatrix2)
+	light1.position = [light1Temp[0]/light1Temp[3],light1Temp[1]/light1Temp[3],light1Temp[2]/light1Temp[3]]
+
+	if(light2.position===undefined)
+		return
+	let light2Temp:glm.vec4 = [light2.position[0], light2.position[1], light2.position[2]]
+	glm.vec4.transformMat4(light2Temp,light2Temp,modelMatrix2)
+	light2.position = [light2Temp[0]/light2Temp[3],light2Temp[1]/light2Temp[3],light2Temp[2]/light2Temp[3]]
+
+	if(light3.position===undefined)
+		return
+	let light3Temp:glm.vec4 = [light3.position[0], light3.position[1], light3.position[2]]
+	glm.vec4.transformMat4(light3Temp,light3Temp,modelMatrix2)
+	light3.position = [light3Temp[0]/light3Temp[3],light3Temp[1]/light3Temp[3],light3Temp[2]/light3Temp[3]]
+
+	var lights: Light[] = [light0, light1, light2, light3, light4];
 
 	for (let i = 0; i < num_lights; i++) {
 		let string_name = "lights[" + i + "].";
