@@ -20,8 +20,18 @@ export default function Typing({ words }: Props) {
 	const caretRef = useRef<HTMLDivElement>(null);
 	const writingDivRef = useRef<HTMLDivElement>(null);
 	const [line, setLine] = useState(0);
+	const [usedPowerups, setUsedPowerups] = useState<number[]>([]);
 	const [selectedPowerup, setSelectedPowerup] = useState(0);
 	const [selectedTarget, setSelectedTarget] = useState(0);
+
+	const { socket, powerups, players, currentPlayer } = usePage();
+
+	const usedPowerupsRef = useRef<number[]>([]);
+	const selectedPowerupRef = useRef(0);
+	const selectedTargetRef = useRef(0);
+	const powerupsRef = useRef(powerups);
+	const playersRef = useRef(players);
+	const currentPlayerRef = useRef(currentPlayer);
 
 	const charSize = useMonoCharSize("font-4xl");
 	const { input, currentWord, typedWords, handleInput } = useTypingEngine(
@@ -30,8 +40,6 @@ export default function Typing({ words }: Props) {
 		writingDivRef,
 		charSize.width
 	);
-
-	const { socket, powerups, players, currentPlayer } = usePage();
 
 	useCaretPosition(testRef, caretRef, currentWord, input, (_line) => {
 		if (_line !== line && _line !== 0) {
@@ -43,44 +51,60 @@ export default function Typing({ words }: Props) {
 		inputRef.current?.focus();
 
 		const onKeyDown = (e: KeyboardEvent) => {
+			const used = usedPowerupsRef.current;
+
 			switch (e.code) {
 				case "ArrowRight":
+					if (used.length !== 0) break;
 					setSelectedPowerup((p) =>
-						Math.min(p + 1, powerups.length - 1)
+						Math.min(p + 1, powerupsRef.current.length - 1)
 					);
 					break;
+
 				case "ArrowLeft":
+					if (used.length !== 0) break;
 					setSelectedPowerup((p) => Math.max(p - 1, 0));
 					break;
+
 				case "ArrowUp":
 					setSelectedTarget((t) =>
 						Math.min(t + 1, targets.length - 1)
 					);
 					break;
+
 				case "ArrowDown":
 					setSelectedTarget((t) => Math.max(t - 1, 0));
 					break;
-				case "Enter":
+
+				case "Enter": {
+					const sel = selectedPowerupRef.current;
+					const targetIndex = selectedTargetRef.current;
+					const powerups = powerupsRef.current;
+					const players = playersRef.current;
+					const currentPlayer = currentPlayerRef.current;
+
+					if (used.includes(sel)) break;
+
 					const target = getTargetPlayer(
 						Object.values(players),
 						currentPlayer,
-						targets[selectedTarget]
+						targets[targetIndex]
 					);
-					console.log(
-						target,
-						POWERUP_INFO[powerups[selectedPowerup]]
-					);
-					if (target !== undefined) {
-						console.log("SEND IT");
-						socket.sendPurchase({
-							powerupId:
-								POWERUP_INFO[powerups[selectedPowerup]].id,
-							targetPlayer: target,
-						});
-					}
+
+					if (target === undefined) return;
+
+					socket.sendPurchase({
+						powerupId: POWERUP_INFO[powerups[sel]].id,
+						targetPlayer: target,
+					});
+
+					setUsedPowerups((prev) => [...prev, sel]);
+					setSelectedPowerup((p) => 1 - p);
 					break;
+				}
 			}
 		};
+
 		document.addEventListener("keydown", onKeyDown);
 		return () => document.removeEventListener("keydown", onKeyDown);
 	}, []);
@@ -88,6 +112,30 @@ export default function Typing({ words }: Props) {
 	function refocus() {
 		inputRef.current?.focus();
 	}
+
+	useEffect(() => {
+		usedPowerupsRef.current = usedPowerups;
+	}, [usedPowerups]);
+
+	useEffect(() => {
+		selectedPowerupRef.current = selectedPowerup;
+	}, [selectedPowerup]);
+
+	useEffect(() => {
+		selectedTargetRef.current = selectedTarget;
+	}, [selectedTarget]);
+
+	useEffect(() => {
+		powerupsRef.current = powerups;
+	}, [powerups]);
+
+	useEffect(() => {
+		playersRef.current = players;
+	}, [players]);
+
+	useEffect(() => {
+		currentPlayerRef.current = currentPlayer;
+	}, [currentPlayer]);
 
 	return (
 		<button
@@ -99,8 +147,12 @@ export default function Typing({ words }: Props) {
 					{powerups.map((p, i) => (
 						<div
 							key={i}
-							className={`transition-all text-foreground hover:text-foreground cursor-pointer text-nowrap items-center flex gap-2 ${selectedPowerup === i ? "" : "brightness-60 hover:brightness-100"}`}
-							onClick={() => setSelectedPowerup(i)}
+							className={`transition-all text-foreground hover:text-foreground cursor-pointer text-nowrap items-center flex gap-2 ${selectedPowerup === i ? "" : "brightness-60 hover:brightness-100"} ${usedPowerups.includes(i) ? "brightness-20! hover:brightness-20!" : ""}`}
+							onClick={() => {
+								if (!usedPowerups.includes(i)) {
+									setSelectedPowerup(i);
+								}
+							}}
 						>
 							<img
 								src={POWERUP_INFO[p].icon}

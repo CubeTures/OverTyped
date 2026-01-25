@@ -5,9 +5,11 @@ import { CurrentPage, usePage } from "./PageProvider";
 import { useEnter } from "./hooks/useEnter";
 import { main } from "./lib/render-start";
 import { incrementStage } from "./lib/draw-scene";
+import BlinkingText from "./components/BlinkingText";
 
 function App() {
 	const { page } = usePage();
+	const [visible, setVisible] = useState(false);
 	const [ready, setReady] = useState(false);
 	const [animationEnd, setAnimationEnd] = useState(false);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,6 +24,13 @@ function App() {
 		}
 	}
 
+	useEffect(() => {
+		// let the objs load
+		setTimeout(() => {
+			setVisible(true);
+		}, 1000);
+	}, []);
+
 	useEnter(() => {
 		setReady(true);
 	});
@@ -34,7 +43,7 @@ function App() {
 
 	useEffect(() => {
 		if (ready) {
-			incrementStage()
+			incrementStage();
 		}
 	}, [ready]);
 
@@ -44,12 +53,12 @@ function App() {
 				width="1920"
 				height="1080"
 				ref={canvasRef}
-				className={`bg-primary/20 transition-all duration-1000 ease-in-out place-self-center w-dvw ${ready ? "h-[60dvh]" : "h-dvh"}`}
+				className={`bg-primary/20 transition-all duration-1000 ease-in-out place-self-center ${ready ? "h-[60dvh]" : "h-dvh"} ${visible ? "w-dvw" : "w-0"}`}
 				onTransitionEnd={() => setAnimationEnd(true)}
 			></canvas>
-			{!ready && (
+			{!ready && visible && (
 				<div className="absolute bottom-0 right-0 text-4xl p-4">
-					Press Enter
+					<BlinkingText text="Press Enter" />
 				</div>
 			)}
 			<div

@@ -1,7 +1,7 @@
 import { motion, type Variants } from "framer-motion";
 import { usePage } from "@/PageProvider";
 import { POWERUP_INFO } from "@/lib/powerups";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PowerupId } from "@/lib/comm";
 import active from "@/assets/active.svg";
 
@@ -43,23 +43,42 @@ const card: Variants = {
 
 function Draft() {
 	const { powerups, setPowerups } = usePage();
+
 	const [choices] = useState<PowerupId[]>([...powerups]);
 	const [chosen, setChosen] = useState<PowerupId[]>([]);
 	const [past, setPast] = useState(false);
+
+	const chosenRef = useRef<PowerupId[]>([]);
 	const done = chosen.length === 2;
+
+	// keep ref in sync with state
+	useEffect(() => {
+		chosenRef.current = chosen;
+	}, [chosen]);
 
 	function selectPowerup(id: PowerupId) {
 		if (chosen.length === 1) {
 			setPowerups([...chosen, id]);
-			setTimeout(() => {
-				setPast(true);
-			}, 1500);
+			setTimeout(() => setPast(true), 1500);
 		}
+
 		setChosen((prev) => prev.concat(id));
 	}
 
+	function ranOutOfTime(finalChosen: PowerupId[]) {
+		if (finalChosen.length !== 2) {
+			setPowerups([...finalChosen, ...powerups].slice(0, 2));
+		}
+	}
+
+	useEffect(() => {
+		return () => {
+			ranOutOfTime(chosenRef.current);
+		};
+	}, []);
+
 	return (
-		<div className="w-full h-full grow flex flex-col gap-4">
+		<div className="w-full h-full grow flex flex-col gap-4 pt-4">
 			<h2
 				className={`
 					w-full text-center text-3xl
