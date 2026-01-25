@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 )
 
 // ---- ServerMessage interface ----
@@ -143,7 +144,7 @@ func (m RaceStartedMessage) MarshalBinary() ([]byte, error) {
 // ---- Progress Update (Opcode 4) ----
 type ProgressUpdateMessage struct {
 	PlayerID byte
-	Progress uint32
+	Progress float32
 	WPM      uint32
 }
 
@@ -156,7 +157,7 @@ func (m ProgressUpdateMessage) MarshalBinary() ([]byte, error) {
 	buf.WriteByte(m.Opcode())
 	buf.WriteByte(m.PlayerID)
 
-	if err := binary.Write(&buf, binary.BigEndian, m.Progress); err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, math.Float32bits(m.Progress)); err != nil {
 		return nil, err
 	}
 

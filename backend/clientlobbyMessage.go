@@ -11,7 +11,7 @@ func (ClientLobbySkipWait) clientLobbyMessage() {}
 
 type ClientLobbyProgressUpdate struct {
 	clientId byte
-	idx      int
+	progress float32
 	wpm      int
 }
 

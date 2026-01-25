@@ -14,7 +14,7 @@ const LobbyWait uint16 = 15
 const DisplayedPowerupCount = 4
 const AllowedPowerupCount = 2
 
-const WordCount = 10
+const WordCount = 100
 
 type Lobby struct {
 	id         int
@@ -126,7 +126,7 @@ startGameLoop:
 			case ClientLobbyProgressUpdate:
 				l.broadcast(ProgressUpdateMessage{
 					PlayerID: msg.clientId,
-					Progress: uint32(msg.idx),
+					Progress: msg.progress,
 					WPM:      uint32(msg.wpm),
 				})
 

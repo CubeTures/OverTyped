@@ -180,7 +180,7 @@ async function main(canvas: HTMLCanvasElement) {
 			return;
 		}
 
-		drawScene(gl, programInfo, actors, cubeRotation);
+		drawScene(gl, programInfo, actors, cubeRotation, deltaTime);
 		cubeRotation += deltaTime;
 		requestAnimationFrame(render);
 	}

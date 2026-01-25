@@ -2,6 +2,7 @@ import * as glm from "gl-matrix";
 import type { InitBufferReturn } from "./init-buffers.ts";
 import type { ProgramInfo, Actor } from "./render-start.ts";
 import { captureOwnerStack } from "react";
+import gamestate from "@/lib/gamestate.ts";
 
 interface Light {
 	exists: boolean;
@@ -13,21 +14,33 @@ interface Light {
 	alpha?: number;
 }
 
-let lastEyeLoc:glm.vec3 = [0.0, 4, 8.5];
-let lastCenterLoc:glm.vec3 = [0.0, 0.0, 0.0];
-let lastLocalUpVal:glm.vec3 = [0.0, 1.0, 0.0];
-let prevCubeRotation:number = 0.0
-let stage = 0
+let lastEyeLoc: glm.vec3 = [0.0, 4, 8.5];
+let lastCenterLoc: glm.vec3 = [0.0, 0.0, 0.0];
+let lastLocalUpVal: glm.vec3 = [0.0, 1.0, 0.0];
+let prevCubeRotation: number = 0.0;
+let stage = 0;
 
-function incrementStage(){
+// actual values
+let actualProgress = [0, 0, 0];
+let playerCount = 0;
+
+function incrementStage() {
 	stage++;
 }
+
+function setPlayerCount(p: number) {
+	playerCount = p;
+    console.log(playerCount)
+}
+
+
 
 function drawScene(
 	gl: WebGLRenderingContext,
 	programInfo: ProgramInfo,
 	actors: Actor[],
-	cubeRotation: number
+	cubeRotation: number,
+	deltaTime: number
 ) {
 	// SETTING -> if want different background, change here
 	gl.clearColor(0.5, 0.5, 0.5, 1.0); // Set Background: rgb, transparency
@@ -37,11 +50,27 @@ function drawScene(
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas
 
 	const projectionMatrix = createProjectionMatrix(gl, cubeRotation, stage);
-	const [viewMatrix, eye] = createViewMatrix(cubeRotation,stage);
+	const [viewMatrix, eye] = createViewMatrix(cubeRotation, stage);
+
+	while (gamestate.progress.length < 3) gamestate.progress.push(0);
+
+	let diffProgress: glm.vec3 = [0, 0, 0];
+	glm.vec3.subtract(diffProgress, gamestate.progress, actualProgress);
+
+	let dp = multiplyVec(divideVec(diffProgress, deltaTime), 0.0001);
+
+	glm.vec3.add(actualProgress, actualProgress, dp);
 
 	/* Stuff independent of current actor */
 	for (let i = 0; i < actors.length; i++) {
-		actors[i].modelMatrix = createModelMatrix(gl, stage, i, cubeRotation);
+		actors[i].modelMatrix = createModelMatrix(
+			gl,
+			stage,
+			i,
+			cubeRotation,
+			actualProgress,
+			playerCount
+		);
 	}
 
 	// Tell WebGL to use our program when drawing
@@ -61,10 +90,10 @@ function drawScene(
 
 	sendLights(gl, programInfo);
 	sendMaterials(gl, programInfo, actors);
-	
+
 	/* Stuff dependent on current actor */
 	for (let i = 0; i < actors.length; i++) {
-		if(((stage==0 || stage==1)  && (i==1 || i==3 || i==4)))
+		if ((stage == 0 || stage == 1) && (i == 1 || i == 3 || i == 4))
 			continue;
 
 		let curr = actors[i];
@@ -110,15 +139,19 @@ function drawScene(
 	}
 }
 
+const progressMult = 700
+
 // SETTING -> can change transformations
 function createModelMatrix(
 	gl: WebGLRenderingContext,
 	stage: number,
 	iteration: number,
-	cubeRotation: number
+	cubeRotation: number,
+	progress: number[],
+	playerCount: number
 ): glm.mat4 {
 	const modelMatrix = glm.mat4.create();
-	if (stage == 0 || stage==1) {
+	if (stage == 0 || stage == 1) {
 		// Car 1
 		if (iteration == 0) {
 			glm.mat4.translate(modelMatrix, modelMatrix, [0.0, 0, 0]);
@@ -128,14 +161,13 @@ function createModelMatrix(
 		else if (iteration == 1) {
 			glm.mat4.translate(modelMatrix, modelMatrix, [-3.0, 2, -7.0]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
-		// Floor
+			// Floor
 		} else if (iteration == 2) {
 			glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
 			glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
 			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 		}
-	}
-    else if (stage == 2) {
+	} else if (stage == 2) {
 		// Car 1
 		if (iteration == 0) {
 			glm.mat4.translate(modelMatrix, modelMatrix, [0.0, 0, 0]);
@@ -143,42 +175,53 @@ function createModelMatrix(
 		}
 		// Car 2
 		else if (iteration == 1) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [-3.0, 0, 0.0]);
+			glm.mat4.translate(modelMatrix, modelMatrix, [
+				-3,
+				playerCount >= 1 ? 0 : -100,
+				-progress[0] * progressMult,
+			]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
-        }
+		}
 		// Car 2
 		else if (iteration == 3) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [-6.0, 0, 0.0]);
+			glm.mat4.translate(modelMatrix, modelMatrix, [
+				-6,
+				playerCount >= 2 ? 0 : -100,
+				-progress[1] * progressMult,
+			]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
-        }
+		}
 		// Car 2
 		else if (iteration == 4) {
-			glm.mat4.translate(modelMatrix, modelMatrix, [-9.0, 0, 0.0]);
+			glm.mat4.translate(modelMatrix, modelMatrix, [
+				-9,
+				playerCount >= 3 ? 0 : -100,
+				-progress[2] * progressMult,
+			]);
 			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
-        }
-		else if (iteration == 2) {
+		} else if (iteration == 2) {
 			glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
 			glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
 			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 		}
-    }
+	}
 	return modelMatrix;
 }
 
 // SETTING -> can change fov, aspect ratio, and other camera style settings
-function createProjectionMatrix(gl: WebGLRenderingContext, cubeRotation:number, stage:number): glm.mat4 {
+function createProjectionMatrix(
+	gl: WebGLRenderingContext,
+	cubeRotation: number,
+	stage: number
+): glm.mat4 {
 	let fieldOfView = toRadian(45); // in radians
-	if(stage==1)
-	{
-		cubeRotation*=10; // Do this multiplication to match camera
+	if (stage == 1) {
+		cubeRotation *= 10; // Do this multiplication to match camera
 		let delta = cubeRotation - prevCubeRotation;
-		delta/=50;
-		if(delta < 1.0)
-		{
-			fieldOfView = toRadian(45 + delta*(30-45));
-		}
-		else
-		{
+		delta /= 50;
+		if (delta < 1.0) {
+			fieldOfView = toRadian(45 + delta * (30 - 45));
+		} else {
 			fieldOfView = toRadian(30);
 		}
 	}
@@ -199,54 +242,58 @@ function createProjectionMatrix(gl: WebGLRenderingContext, cubeRotation:number, 
 }
 
 // SETTING -> can change location and orientation of camera
-function createViewMatrix(cubeRotation:number,stage: number): [glm.mat4, glm.vec3] {
-	cubeRotation*=10
-	let eye:glm.vec3 = [0.0, 4, 8.5];
-	const up:glm.vec3 = [0.0, 1.0, 0.0];
-	let center:glm.vec3 = [0.0, 0.0, 0.0];
-	let localUp:glm.vec3 = [0.0, 1.0, 0.0];
+function createViewMatrix(
+	cubeRotation: number,
+	stage: number
+): [glm.mat4, glm.vec3] {
+	cubeRotation *= 10;
+	let eye: glm.vec3 = [0.0, 4, 8.5];
+	const up: glm.vec3 = [0.0, 1.0, 0.0];
+	let center: glm.vec3 = [0.0, 0.0, 0.0];
+	let localUp: glm.vec3 = [0.0, 1.0, 0.0];
 
 	// Rotation
 	// [eye, localUp] = cameraRotate(cubeRotation, 0, eye, up, center);
 	// translation
 	// [eye, center] = cameraTranslate(cubeRotation, cubeRotation, eye, localUp, center);
 
-	if(stage==0)
-	{
+	if (stage == 0) {
 		eye = [0.0, 5, 8.5];
 		[eye, localUp] = cameraRotate(cubeRotation, 0, eye, up, center);
 		lastEyeLoc = eye;
 		lastCenterLoc = center;
-		lastLocalUpVal = localUp
-		prevCubeRotation = cubeRotation
-	}
-	else if(stage==1)
-	{
-		let goal_eye = [5.312665357535245, 2.4108821800101907, -8.483851754707231]
-		let goal_center = [-1.9835334873744237, 1.7891077449668553, -2.0507081389845756]
-		let goal_localUp = [-0.12335341423749924, 0.9863846302032471, 0.10876214504241943]
+		lastLocalUpVal = localUp;
+		prevCubeRotation = cubeRotation;
+	} else if (stage == 1) {
+		let goal_eye = [
+			5.312665357535245, 2.4108821800101907, -8.483851754707231,
+		];
+		let goal_center = [
+			-1.9835334873744237, 1.7891077449668553, -2.0507081389845756,
+		];
+		let goal_localUp = [
+			-0.12335341423749924, 0.9863846302032471, 0.10876214504241943,
+		];
 
-		let delta = cubeRotation - prevCubeRotation
-		delta/=50
-		
-		if(delta < 1.0)
-		{
+		let delta = cubeRotation - prevCubeRotation;
+		delta /= 50;
+
+		if (delta < 1.0) {
 			eye = computeBezier(lastEyeLoc, goal_eye, delta);
 			center = computeBezier(lastCenterLoc, goal_center, delta);
 			localUp = computeBezier(lastLocalUpVal, goal_localUp, delta);
-		}
-		else
-		{
+		} else {
 			eye = goal_eye;
 			center = goal_center;
 			localUp = goal_localUp;
 		}
+	} else if (stage == 2) {
+		eye = [5.312665357535245, 2.4108821800101907, -8.483851754707231];
+		center = [-1.9835334873744237, 1.7891077449668553, -2.0507081389845756];
+		localUp = [
+			-0.12335341423749924, 0.9863846302032471, 0.10876214504241943,
+		];
 	}
-    else if (stage == 2) {
-		eye = [5.312665357535245, 2.4108821800101907, -8.483851754707231]
-		center = [-1.9835334873744237, 1.7891077449668553, -2.0507081389845756]
-		localUp = [-0.12335341423749924, 0.9863846302032471, 0.10876214504241943]
-    }
 
 	const viewMatrix = glm.mat4.create();
 	return [glm.mat4.lookAt(viewMatrix, eye, center, localUp), eye];
@@ -261,10 +308,9 @@ function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo) {
 		color: [0.5, 0.5, 0.5],
 		is_spotlight: true,
 		a: [0.0, -1.0, 0.0],
-		theta: (15.0 * Math.PI)/ 180,
-		alpha: 10.0
+		theta: (15.0 * Math.PI) / 180,
+		alpha: 10.0,
 	};
-
 
 	var light1: Light = {
 		exists: false,
@@ -453,27 +499,67 @@ function setMaterialIndexAttribute(
 	gl.enableVertexAttribArray(programInfo.attribLocations.materialIndex);
 }
 
-function cameraRotate(deltaX:number, deltaY:number, eye:glm.vec3, up:glm.vec3, center:glm.vec3, localUpp:glm.vec3|undefined = undefined): [glm.vec3, glm.vec3]
-{
-	
-	let wVector:glm.vec3 = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
-	let localRight:glm.vec3 = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
-	let localUp:glm.vec3 = glm.vec3.cross([0,0,0],wVector, localRight);
-	if(localUpp !== undefined)
-	{
+function cameraRotate(
+	deltaX: number,
+	deltaY: number,
+	eye: glm.vec3,
+	up: glm.vec3,
+	center: glm.vec3,
+	localUpp: glm.vec3 | undefined = undefined
+): [glm.vec3, glm.vec3] {
+	let wVector: glm.vec3 = divideVec(
+		glm.vec3.subtract([0, 0, 0], eye, center),
+		glm.vec3.length(glm.vec3.subtract([0, 0, 0], eye, center))
+	);
+	let localRight: glm.vec3 = divideVec(
+		glm.vec3.cross([0, 0, 0], up, wVector),
+		glm.vec3.length(glm.vec3.cross([0, 0, 0], up, wVector))
+	);
+	let localUp: glm.vec3 = glm.vec3.cross([0, 0, 0], wVector, localRight);
+	if (localUpp !== undefined) {
 		localUp = localUpp;
-		wVector = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
-		localRight = divideVec(glm.vec3.cross([0,0,0],localUp, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],localUp, wVector)));
+		wVector = divideVec(
+			glm.vec3.subtract([0, 0, 0], eye, center),
+			glm.vec3.length(glm.vec3.subtract([0, 0, 0], eye, center))
+		);
+		localRight = divideVec(
+			glm.vec3.cross([0, 0, 0], localUp, wVector),
+			glm.vec3.length(glm.vec3.cross([0, 0, 0], localUp, wVector))
+		);
 	}
 
-	let a:glm.vec3 = glm.vec3.subtract([0,0,0],eye, center);
-	let rotMatrixLocalRight:glm.mat3 = glm.mat4.rotate(glm.mat4.create(), glm.mat4.create(), toRadian(15.0 * deltaY * 0.1), localRight);
-	let rotMatrixGlobalUp:glm.mat3 = glm.mat4.rotate(glm.mat4.create(), glm.mat4.create(), toRadian(15.0 * deltaX * 0.1), up);
-	let aNew:glm.vec3 = glm.vec3.transformMat4(glm.vec3.create(), a, glm.mat4.multiply(glm.mat4.create(),rotMatrixGlobalUp,rotMatrixLocalRight));//rotMatrixGlobalUp  * rotMatrixLocalRight * a;
-	localUp = glm.vec3.transformMat4(glm.vec3.create(), localUp, glm.mat4.multiply(glm.mat4.create(),rotMatrixGlobalUp,rotMatrixLocalRight));//rotMatrixGlobalUp  * rotMatrixLocalRight * localUp;
-	glm.vec3.add(eye, center, (aNew));
-	
-
+	let a: glm.vec3 = glm.vec3.subtract([0, 0, 0], eye, center);
+	let rotMatrixLocalRight: glm.mat3 = glm.mat4.rotate(
+		glm.mat4.create(),
+		glm.mat4.create(),
+		toRadian(15.0 * deltaY * 0.1),
+		localRight
+	);
+	let rotMatrixGlobalUp: glm.mat3 = glm.mat4.rotate(
+		glm.mat4.create(),
+		glm.mat4.create(),
+		toRadian(15.0 * deltaX * 0.1),
+		up
+	);
+	let aNew: glm.vec3 = glm.vec3.transformMat4(
+		glm.vec3.create(),
+		a,
+		glm.mat4.multiply(
+			glm.mat4.create(),
+			rotMatrixGlobalUp,
+			rotMatrixLocalRight
+		)
+	); //rotMatrixGlobalUp  * rotMatrixLocalRight * a;
+	localUp = glm.vec3.transformMat4(
+		glm.vec3.create(),
+		localUp,
+		glm.mat4.multiply(
+			glm.mat4.create(),
+			rotMatrixGlobalUp,
+			rotMatrixLocalRight
+		)
+	); //rotMatrixGlobalUp  * rotMatrixLocalRight * localUp;
+	glm.vec3.add(eye, center, aNew);
 
 	// let wVector:glm.vec3 = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
 	// let localRight:glm.vec3 = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
@@ -488,66 +574,88 @@ function cameraRotate(deltaX:number, deltaY:number, eye:glm.vec3, up:glm.vec3, c
 	return [eye, localUp];
 }
 
+function cameraTranslate(
+	deltaX: number,
+	deltaY: number,
+	eye: glm.vec3,
+	up: glm.vec3,
+	center: glm.vec3
+): [glm.vec3, glm.vec3] {
+	let wVector: glm.vec3 = divideVec(
+		glm.vec3.subtract([0, 0, 0], eye, center),
+		glm.vec3.length(glm.vec3.subtract([0, 0, 0], eye, center))
+	);
+	let localRight: glm.vec3 = divideVec(
+		glm.vec3.cross([0, 0, 0], up, wVector),
+		glm.vec3.length(glm.vec3.cross([0, 0, 0], up, wVector))
+	);
+	let localUp: glm.vec3 = glm.vec3.cross([0, 0, 0], wVector, localRight);
 
-function cameraTranslate(deltaX:number, deltaY:number, eye:glm.vec3, up:glm.vec3, center:glm.vec3): [glm.vec3, glm.vec3]
-{
-	let wVector:glm.vec3 = divideVec((glm.vec3.subtract([0,0,0],eye, center)),glm.vec3.length((glm.vec3.subtract([0,0,0], eye,center))));
-	let localRight:glm.vec3 = divideVec(glm.vec3.cross([0,0,0],up, wVector),glm.vec3.length(glm.vec3.cross([0,0,0],up, wVector)));
-	let localUp:glm.vec3 = glm.vec3.cross([0,0,0],wVector, localRight);
-	
-	glm.vec3.add(eye,eye,multiplyVec(localRight, deltaX * 0.01));
-	glm.vec3.add(center,center,multiplyVec(localRight, deltaX * 0.01));
+	glm.vec3.add(eye, eye, multiplyVec(localRight, deltaX * 0.01));
+	glm.vec3.add(center, center, multiplyVec(localRight, deltaX * 0.01));
 
-	glm.vec3.add(eye,eye,multiplyVec(localUp, deltaY * 0.01));
-	glm.vec3.add(center,center,multiplyVec(localUp, deltaY * 0.01));
+	glm.vec3.add(eye, eye, multiplyVec(localUp, deltaY * 0.01));
+	glm.vec3.add(center, center, multiplyVec(localUp, deltaY * 0.01));
 
 	return [eye, center];
 }
 
-function computeBezier(start:glm.vec3, end:glm.vec3, delta:number) : glm.vec3
-{
+function computeBezier(
+	start: glm.vec3,
+	end: glm.vec3,
+	delta: number
+): glm.vec3 {
 	// Bezier Functions
-	let B0 = (1-delta)*(1-delta)*(1-delta)
-	let B1 = 3*delta*(1-delta)*(1-delta)
-	let B2 = 3 * delta * delta * (1-delta)
-	let B3 = delta*delta*delta
+	let B0 = (1 - delta) * (1 - delta) * (1 - delta);
+	let B1 = 3 * delta * (1 - delta) * (1 - delta);
+	let B2 = 3 * delta * delta * (1 - delta);
+	let B3 = delta * delta * delta;
 
 	// Points
-	let P0:glm.vec3 = start;
-	let P1:glm.vec3 = glm.vec3.subtract(glm.vec3.create(), start, [0,0,0]);
-	P1[1]*=-1;
-	glm.vec3.add(P1, P1, start) 
-	let P3:glm.vec3 = end
-	let P2:glm.vec3 = glm.vec3.subtract(glm.vec3.create(), end, P1);
-	glm.vec3.normalize(P2, P2)
-	glm.vec3.add(P2, P2, end)
+	let P0: glm.vec3 = start;
+	let P1: glm.vec3 = glm.vec3.subtract(glm.vec3.create(), start, [0, 0, 0]);
+	P1[1] *= -1;
+	glm.vec3.add(P1, P1, start);
+	let P3: glm.vec3 = end;
+	let P2: glm.vec3 = glm.vec3.subtract(glm.vec3.create(), end, P1);
+	glm.vec3.normalize(P2, P2);
+	glm.vec3.add(P2, P2, end);
 
 	// Result
-	const result:glm.vec3 = addVecs(addVecs(multiplyVec(P0, B0), multiplyVec(P1, B1)),addVecs(multiplyVec(P2, B2), multiplyVec(P3, B3)))
-	return result
+	const result: glm.vec3 = addVecs(
+		addVecs(multiplyVec(P0, B0), multiplyVec(P1, B1)),
+		addVecs(multiplyVec(P2, B2), multiplyVec(P3, B3))
+	);
+	return result;
 }
 
-export function toRadian(degrees:number)
-{
-	return (degrees*Math.PI)/180.0
+export function toRadian(degrees: number) {
+	return (degrees * Math.PI) / 180.0;
 }
 
-function addVecs(vec1:glm.vec3, vec2:glm.vec3):glm.vec3
-{
-	const answer = [vec1[0]+vec2[0], vec1[1]+vec2[1], vec1[2]+vec2[2]]
-	return answer
+function addVecs(vec1: glm.vec3, vec2: glm.vec3): glm.vec3 {
+	const answer = [vec1[0] + vec2[0], vec1[1] + vec2[1], vec1[2] + vec2[2]];
+	return answer;
 }
 
-function multiplyVec(vec:glm.vec3, num:number):glm.vec3
-{
-	const answer = [vec[0]*num, vec[1]*num, vec[2]*num]
-	return answer
+function multiplyVec(vec: glm.vec3, num: number): glm.vec3 {
+	const answer = [vec[0] * num, vec[1] * num, vec[2] * num];
+	return answer;
 }
 
-function divideVec(vec:glm.vec3, num:number):glm.vec3
-{
-	const answer = [vec[0]/num, vec[1]/num, vec[2]/num]
-	return answer
+function divideVec(vec: glm.vec3, num: number): glm.vec3 {
+	const answer = [vec[0] / num, vec[1] / num, vec[2] / num];
+	return answer;
 }
 
-export { drawScene, incrementStage};
+function multiplyVec4(vec: glm.vec4, num: number): glm.vec4 {
+	const answer = [vec[0] * num, vec[1] * num, vec[2] * num, vec[3] / num];
+	return answer;
+}
+
+function divideVec4(vec: glm.vec4, num: number): glm.vec4 {
+	const answer = [vec[0] / num, vec[1] / num, vec[2] / num, vec[3] / num];
+	return answer;
+}
+
+export { drawScene, incrementStage, setPlayerCount };

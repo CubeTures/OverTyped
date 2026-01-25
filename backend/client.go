@@ -186,7 +186,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 
 					c.lobbyRead <- ClientLobbyProgressUpdate{
 						clientId: c.id,
-						idx:      idx,
+						progress: float32(idx) / float32(len(c.words)),
 						wpm:      int(wpm),
 					}
 

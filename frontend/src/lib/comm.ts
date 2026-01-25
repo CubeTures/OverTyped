@@ -286,7 +286,7 @@ function parseServerMessage(buffer: ArrayBuffer): ServerMessage {
 
 		case ServerOp.ProgressUpdate: {
 			const playerId = view.getUint8(offset++);
-			const progress = view.getUint32(offset, false);
+			const progress = view.getFloat32(offset, false);
 			offset += 4;
 			const wpm = view.getUint32(offset, false);
 			return { opcode, playerId, progress, wpm };
@@ -430,7 +430,7 @@ async function connect_raw(url: string): Promise<Socket> {
 }
 
 export async function connect(): Promise<Socket> {
-	// const proto = (window.location.protocol == "http:") ? "ws://" : "wss://"
-	// return await connect_raw(`${proto}${window.location.host}/ws\?name=${name}`)
-	return await connect_raw("ws://127.0.0.1:8080/ws");
+	const proto = (window.location.protocol == "http:") ? "ws://" : "wss://"
+	return await connect_raw(`${proto}${window.location.host}/ws`)
+	// return await connect_raw("ws://127.0.0.1:8080/ws");
 }
