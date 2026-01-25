@@ -65,6 +65,8 @@ func (l *Lobby) run() {
 	startGameTimer := time.NewTimer(time.Duration(LobbyWait) * time.Second)
 	timerStart := time.Now()
 
+	openLobbyTimer := time.NewTimer(time.Duration(LobbyWait - 10) * time.Second)
+
 startGameLoop:
 	for {
 		select {
@@ -82,6 +84,9 @@ startGameLoop:
 
 		case <-startGameTimer.C:
 			break startGameLoop
+
+		case <-openLobbyTimer.C:
+			l.open = false
 
 		case msg := <-l.lobbyRead:
 			_, ok := msg.(ClientLobbySkipWait)

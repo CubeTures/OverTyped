@@ -23,6 +23,8 @@ const (
 	OpcodeProgressUpdate      ServerOpcode = 4
 	OpcodePlayerFinished      ServerOpcode = 5
 	OpcodeStatusChanged       ServerOpcode = 6
+	OpcodePurchaseResult      ServerOpcode = 7
+	OpcodeUpdateWords         ServerOpcode = 8
 )
 
 // ---- Helper types ----
@@ -59,6 +61,7 @@ type LobbyGreetingMessage struct {
 	TimeRemaining uint16
 	Players       []Player
 	Words         []string
+	Powerups      []byte
 }
 
 func (m LobbyGreetingMessage) Opcode() byte {
@@ -92,6 +95,15 @@ func (m LobbyGreetingMessage) MarshalBinary() ([]byte, error) {
 
 		buf.WriteByte(byte(len(w)))
 		buf.WriteString(w)
+	}
+
+	if len(m.Powerups) > 255 {
+		return nil, fmt.Errorf("too many powerups")
+	}
+
+	buf.WriteByte(byte(len(m.Powerups)))
+	for _, powerup := range m.Powerups {
+		buf.WriteByte(powerup)
 	}
 
 	return buf.Bytes(), nil
@@ -152,7 +164,7 @@ func (m ProgressUpdateMessage) MarshalBinary() ([]byte, error) {
 
 // ---- Player Finished (Opcode 5) ----
 type PlayerFinishedMessage struct {
-	PlayerID byte
+	PlayerID  byte
 	Placement byte
 }
 
@@ -167,7 +179,7 @@ func (m PlayerFinishedMessage) MarshalBinary() ([]byte, error) {
 // ---- Status Changed (Opcode 6) ----
 type StatusChangedMessage struct {
 	PlayerID        byte
-	StatusEffectIDs []uint16
+	StatusEffectIDs []byte
 }
 
 func (m StatusChangedMessage) Opcode() byte {
@@ -179,14 +191,67 @@ func (m StatusChangedMessage) MarshalBinary() ([]byte, error) {
 	buf.WriteByte(m.Opcode())
 	buf.WriteByte(m.PlayerID)
 
-	if err := binary.Write(&buf, binary.BigEndian, uint16(len(m.StatusEffectIDs))); err != nil {
+	buf.WriteByte(byte(len(m.StatusEffectIDs)))
+
+	for _, id := range m.StatusEffectIDs {
+		buf.WriteByte(id)
+	}
+
+	return buf.Bytes(), nil
+}
+
+// ---- Status Changed (Opcode 7) ----
+type PurchaseResultMessage struct {
+	powerupID byte
+	success   bool
+}
+
+func (PurchaseResultMessage) Opcode() byte {
+	return byte(OpcodePurchaseResult)
+}
+
+func (m PurchaseResultMessage) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteByte(m.Opcode())
+	buf.WriteByte(m.powerupID)
+	if m.success {
+		buf.WriteByte(1)
+	} else {
+		buf.WriteByte(0)
+	}
+
+	return buf.Bytes(), nil
+}
+
+// ---- Status Changed (Opcode 8) ----
+type UpdateWordsMessage struct {
+	idx   uint32
+	words []string
+}
+
+func (UpdateWordsMessage) Opcode() byte {
+	return byte(OpcodeUpdateWords)
+}
+
+func (m UpdateWordsMessage) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteByte(m.Opcode())
+
+	if err := binary.Write(&buf, binary.BigEndian, m.idx); err != nil {
 		return nil, err
 	}
 
-	for _, id := range m.StatusEffectIDs {
-		if err := binary.Write(&buf, binary.BigEndian, id); err != nil {
-			return nil, err
+	if err := binary.Write(&buf, binary.BigEndian, uint32(len(m.words))); err != nil {
+		return nil, err
+	}
+
+	for _, w := range m.words {
+		if len(w) > 255 {
+			return nil, fmt.Errorf("word too long")
 		}
+
+		buf.WriteByte(byte(len(w)))
+		buf.WriteString(w)
 	}
 
 	return buf.Bytes(), nil

@@ -12,6 +12,7 @@ const (
 	OpcodeSubmission      Opcode = 1
 	OpcodePowerupPurchase Opcode = 2
 	OpcodeSkipWait        Opcode = 3
+	OpcodeSelectPowerups  Opcode = 4
 )
 
 // ---- ClientMessage interface ----
@@ -92,6 +93,25 @@ func (m *SkipWaitMessage) UnmarshalBinary(data []byte) error {
 	if len(data) != 0 {
 		return fmt.Errorf("skip wait: expected no content, got %d bytes", len(data))
 	}
+	return nil
+}
+
+// ---- Skip Wait (Opcode 4) ----
+type SelectPowerupsMessage struct {
+	PowerupIDs []byte
+}
+
+func (*SelectPowerupsMessage) Opcode() Opcode {
+	return OpcodeSelectPowerups
+}
+
+func (m *SelectPowerupsMessage) UnmarshalBinary(data []byte) error {
+	if len(data) < 1 {
+		return fmt.Errorf("select powerups: expected # selections")
+	}
+
+	m.PowerupIDs = data[1:]
+
 	return nil
 }
 
