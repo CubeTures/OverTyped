@@ -41,7 +41,7 @@ function drawScene(
 
 	/* Stuff independent of current actor */
 	for (let i = 0; i < actors.length; i++) {
-		actors[i].modelMatrix = createModelMatrix(gl, 0, i, cubeRotation);
+		actors[i].modelMatrix = createModelMatrix(gl, stage, i, cubeRotation);
 	}
 
 	// Tell WebGL to use our program when drawing
@@ -64,7 +64,7 @@ function drawScene(
 	
 	/* Stuff dependent on current actor */
 	for (let i = 0; i < actors.length; i++) {
-		if(((stage==0 || stage==1)  && i==1))
+		if(((stage==0 || stage==1)  && (i==1 || i==3 || i==4)))
 			continue;
 
 		let curr = actors[i];
@@ -135,6 +135,33 @@ function createModelMatrix(
 			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
 		}
 	}
+    else if (stage == 2) {
+		// Car 1
+		if (iteration == 0) {
+			glm.mat4.translate(modelMatrix, modelMatrix, [0.0, 0, 0]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
+		}
+		// Car 2
+		else if (iteration == 1) {
+			glm.mat4.translate(modelMatrix, modelMatrix, [-3.0, 0, 0.0]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
+        }
+		// Car 2
+		else if (iteration == 3) {
+			glm.mat4.translate(modelMatrix, modelMatrix, [-6.0, 0, 0.0]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
+        }
+		// Car 2
+		else if (iteration == 4) {
+			glm.mat4.translate(modelMatrix, modelMatrix, [-9.0, 0, 0.0]);
+			glm.mat4.rotate(modelMatrix, modelMatrix, toRadian(180), [0, 1, 0]);
+        }
+		else if (iteration == 2) {
+			glm.mat4.scale(modelMatrix, modelMatrix, [100, -0.001, 100]);
+			glm.mat4.translate(modelMatrix, modelMatrix, [0, -1, 0.0]);
+			// glm.mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 1, 0]);
+		}
+    }
 	return modelMatrix;
 }
 
@@ -215,6 +242,11 @@ function createViewMatrix(cubeRotation:number,stage: number): [glm.mat4, glm.vec
 			localUp = goal_localUp;
 		}
 	}
+    else if (stage == 2) {
+		eye = [5.312665357535245, 2.4108821800101907, -8.483851754707231]
+		center = [-1.9835334873744237, 1.7891077449668553, -2.0507081389845756]
+		localUp = [-0.12335341423749924, 0.9863846302032471, 0.10876214504241943]
+    }
 
 	const viewMatrix = glm.mat4.create();
 	return [glm.mat4.lookAt(viewMatrix, eye, center, localUp), eye];
@@ -495,7 +527,7 @@ function computeBezier(start:glm.vec3, end:glm.vec3, delta:number) : glm.vec3
 	return result
 }
 
-function toRadian(degrees:number)
+export function toRadian(degrees:number)
 {
 	return (degrees*Math.PI)/180.0
 }

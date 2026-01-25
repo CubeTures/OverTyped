@@ -14,6 +14,8 @@ const LobbyWait uint16 = 15
 const DisplayedPowerupCount = 4
 const AllowedPowerupCount = 2
 
+const WordCount = 10
+
 type Lobby struct {
 	id         int
 	register   chan *Client
@@ -48,7 +50,7 @@ func newLobby(id int, hub *Hub) *Lobby {
 
 		hub: hub,
 
-		words: RandomWords(wordsEnglish, 100),
+		words: RandomWords(wordsEnglish, WordCount),
 	}
 
 	return l
