@@ -15,7 +15,7 @@ function LobbyList() {
 
 	return (
 		<div className="absolute top-0 left-0 flex flex-col bg-card m-4 rounded-md font-mono w-3xs">
-			<div className="w-full p-4 text-center rounded-md">Speed</div>
+			<div className="w-full p-4 text-center rounded-md">OverTyped</div>
 			<Reorder.Group
 				axis="y"
 				values={orderedPlayers.map((p) => p.id)}
