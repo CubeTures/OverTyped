@@ -56,7 +56,7 @@ func (m *SubmissionMessage) Opcode() Opcode {
 }
 
 func (m *SubmissionMessage) UnmarshalBinary(data []byte) error {
-	if len(data) != 1 {
+	if len(data) != 4 {
 		return fmt.Errorf("submission: expected 1 byte, got %d", len(data))
 	}
 
