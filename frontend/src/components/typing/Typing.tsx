@@ -1,31 +1,44 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
 import { useCaretPosition } from "@/hooks/useCaretPosition";
 import Word from "./Word";
+import { useMonoCharSize } from "@/hooks/useFontLetterSize";
 
-const TEST_STRING =
-	"this is a type test make sure to type the fastest you possibly can to show that you are the fastest one to exist we know you think you are fast but are you really faster than the best find out now";
+interface Props {
+	words: string[];
+}
 
-const words = TEST_STRING.split(" ");
-
-export default function Typing() {
+export default function Typing({ words }: Props) {
 	const testRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const caretRef = useRef<HTMLDivElement>(null);
+	const writingDivRef = useRef<HTMLDivElement>(null);
+	const [line, setLine] = useState(0);
 
-	const { input, currentWord, typedWords, handleInput } =
-		useTypingEngine(words);
-
-	useCaretPosition(testRef, caretRef, currentWord, input);
+	const charSize = useMonoCharSize("font-4xl");
+	const { input, currentWord, typedWords, handleInput } = useTypingEngine(
+		words,
+		caretRef,
+		writingDivRef,
+		charSize.width
+	);
+	useCaretPosition(testRef, caretRef, currentWord, input, (_line) => {
+		if (_line !== line && _line !== 0) {
+			setLine(_line);
+		}
+	});
 
 	useEffect(() => {
 		inputRef.current?.focus();
 	}, []);
 
 	return (
-		<div className="grow max-w-5xl m-4 text-4xl relative font-mono">
+		<div
+			className="grow max-w-5xl m-4 text-4xl relative font-mono h-[calc(var(--text-4xl)*3+(var(--spacing))*4)] pt-1"
+			ref={writingDivRef}
+		>
 			<div
-				className="flex flex-wrap text-muted-foreground h-min"
+				className="flex flex-wrap text-muted-foreground h-full items-start top-0 overflow-hidden"
 				ref={testRef}
 				onClick={() => inputRef.current?.focus()}
 			>
@@ -36,6 +49,7 @@ export default function Typing() {
 						status={w.status}
 						isActive={i === currentWord}
 						input={input}
+						offsetY={line > 2 ? 40 * (line - 2) : 0}
 					/>
 				))}
 			</div>
@@ -49,7 +63,7 @@ export default function Typing() {
 			/>
 
 			<div
-				className="absolute w-0.75 h-(--text-4xl) bg-primary rounded-full pointer-events-none transition-all top-0 left-0"
+				className="absolute w-0.75 h-(--text-4xl) bg-primary rounded-full pointer-events-none transition-all top-10 left-0"
 				ref={caretRef}
 			/>
 		</div>

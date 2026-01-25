@@ -7,9 +7,10 @@ type Props = {
 	isActive: boolean;
 	status: LetterStatus;
 	input: string;
+	offsetY: number;
 };
 
-function Word({ word, isActive, status, input }: Props) {
+function Word({ word, isActive, status, input, offsetY }: Props) {
 	const [letterStates, setLetterStates] = useState<LetterStatus[]>([]);
 	const letters = word.split("");
 
@@ -33,7 +34,10 @@ function Word({ word, isActive, status, input }: Props) {
 	}, [input, isActive, word]);
 
 	return (
-		<div className={className}>
+		<div
+			className={className}
+			style={{ transform: `translateY(-${offsetY}px)` }}
+		>
 			{letters.map((char, i) => {
 				const state = letterStates[i];
 

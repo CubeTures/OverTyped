@@ -1,15 +1,11 @@
 import { usePage } from "@/PageProvider";
-import { useEffect, useRef, useState, type KeyboardEventHandler } from "react";
-import { Input } from "../ui/input";
+import { useRef, useState, type KeyboardEventHandler } from "react";
+import FadeTypewriter from "../FadeTypewriter";
 
 function TitlePage() {
 	const { setName } = usePage();
 	const [tempName, setTempName] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
-
-	useEffect(() => {
-		inputRef.current?.focus();
-	}, [inputRef]);
 
 	const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
 		if (e.code === "Enter" && tempName !== "") {
@@ -19,13 +15,19 @@ function TitlePage() {
 
 	return (
 		<div className="w-full h-full flex flex-col justify-center items-center gap-4">
-			<Input
+			<FadeTypewriter
+				className="text-xl"
+				text="What do they call you?"
+				speed={25}
+				onComplete={() => inputRef.current?.focus()}
+			/>
+			<input
 				ref={inputRef}
-				className="h-[--text-4xl] w-80 text-4xl! text-center"
+				className="h-[--text-4xl] w-80 text-4xl text-center outline-none ring-0 focus:outline-none focus:ring-0 border-none bg-transparent"
 				value={tempName}
 				onChange={(e) => setTempName(e.target.value)}
 				onKeyDown={handleKeyDown}
-			></Input>
+			></input>
 		</div>
 	);
 }

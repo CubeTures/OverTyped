@@ -24,9 +24,9 @@ function App() {
 	});
 
 	return (
-		<div className="bg-muted w-dvw h-dvh flex flex-col">
+		<div className="w-dvw h-dvh flex flex-col">
 			<canvas
-				className={`bg-red-400 transition-all duration-1000 ease-in-out place-self-center w-dvw ${ready ? "h-[60dvh]" : "h-dvh"}`}
+				className={`bg-primary/20 transition-all duration-1000 ease-in-out place-self-center w-dvw ${ready ? "h-[60dvh]" : "h-dvh"}`}
 				onTransitionEnd={() => setAnimationEnd(true)}
 			></canvas>
 			{!ready && (
