@@ -38,6 +38,11 @@ function App() {
 		}
 	}, [ready]);
 
+    useEffect(() => {
+        if (page == CurrentPage.Game)
+            incrementStage();
+    }, [page])
+
 	return (
 		<div className="w-dvw h-dvh flex flex-col">
 			<canvas

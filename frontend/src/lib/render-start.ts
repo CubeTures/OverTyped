@@ -137,6 +137,8 @@ async function main(canvas: HTMLCanvasElement) {
 	actors[1].overrideTextureName = "002_COLOR_BASIC.png";
 	actors.push({ buffers: cubeBuffers });
 	actors[2].overrideNoTextureColor = [10, 10, 10, 255];
+	actors.push({ buffers: carBuffers });
+	actors.push({ buffers: carBuffers });
 
 	// Load texture based on the value in map_Kd. No texture defaults to blue
 	actors.forEach((actor) => {
