@@ -81,7 +81,7 @@ startGameLoop:
 			client.id = clientId
 			clientId++
 
-			remainingTime := uint16(time.Since(timerStart) / time.Second)
+			remainingTime := LobbyWait - (uint16(time.Since(timerStart) / time.Second))
 
 			l.registerClient(client, remainingTime)
 
