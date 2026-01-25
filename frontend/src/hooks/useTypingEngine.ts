@@ -1,7 +1,7 @@
 import { getElementSize } from "@/lib/sizingt";
 import { getTypedCharacter as getTypedCharacters } from "@/lib/typedCharacter";
 import { usePage } from "@/PageProvider";
-import { useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
 export type WordStatus = "pending" | "correct" | "incorrect";
 
@@ -17,6 +17,23 @@ export function useTypingEngine(
 	const [typedWords, setTypedWords] = useState(
 		words.map((w) => ({ text: w, status: "pending" as WordStatus }))
 	);
+	useEffect(() => {
+		let news = typedWords.map((v, i) => {
+			if (v.status !== "pending") {
+				return v;
+			}
+			return { text: words[i], status: "pending" as WordStatus };
+		});
+		if (words.length > typedWords.length) {
+			news = news.concat(
+				words
+					.slice(typedWords.length)
+					.map((w) => ({ text: w, status: "pending" as WordStatus }))
+			);
+		}
+		setTypedWords(news);
+		return;
+	}, [words]);
 
 	const handleInput = (value: string) => {
 		const typed = value.trim();
