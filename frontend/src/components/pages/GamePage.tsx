@@ -10,7 +10,7 @@ function GamePage() {
 		<>
 			<LobbyList />
 			{page === CurrentPage.Game ? (
-				<Typing words={words.slice(0, 30)} />
+				<Typing words={words} />
 			) : (
 				<Draft />
 			)}

@@ -5,8 +5,10 @@ import Word from "./Word";
 import { useMonoCharSize } from "@/hooks/useFontLetterSize";
 import { usePage } from "@/PageProvider";
 import { POWERUP_INFO } from "@/lib/powerups";
+import { getTargetPlayer } from "@/lib/target";
+import type { PowerupId } from "@/lib/comm";
 
-const targets = ["first", "last", "closest"];
+const targets = ["first", "last", "closest"] as const;
 
 interface Props {
 	words: string[];
@@ -29,7 +31,7 @@ export default function Typing({ words }: Props) {
 		charSize.width
 	);
 
-	const { powerups } = usePage();
+	const { socket, powerups, players, currentPlayer } = usePage();
 
 	useCaretPosition(testRef, caretRef, currentWord, input, (_line) => {
 		if (_line !== line && _line !== 0) {
@@ -58,6 +60,24 @@ export default function Typing({ words }: Props) {
 				case "ArrowDown":
 					setSelectedTarget((t) => Math.max(t - 1, 0));
 					break;
+				case "Enter":
+					const target = getTargetPlayer(
+						Object.values(players),
+						currentPlayer,
+						targets[selectedTarget]
+					);
+					if (
+						target &&
+						POWERUP_INFO[selectedPowerup as PowerupId].action ===
+							"active"
+					) {
+						socket.sendPurchase({
+							powerupId:
+								POWERUP_INFO[selectedPowerup as PowerupId].id,
+							targetPlayer: target,
+						});
+					}
+					break;
 			}
 		};
 		document.addEventListener("keydown", onKeyDown);
@@ -81,7 +101,10 @@ export default function Typing({ words }: Props) {
 							className={`transition-all text-foreground hover:text-foreground cursor-pointer text-nowrap items-center flex gap-2 ${selectedPowerup === i ? "" : "brightness-60 hover:brightness-100"}`}
 							onClick={() => setSelectedPowerup(i)}
 						>
-							<img src={POWERUP_INFO[p].icon} className="size-5"/>
+							<img
+								src={POWERUP_INFO[p].icon}
+								className="size-5"
+							/>
 							<p>{POWERUP_INFO[p].name}</p>
 						</div>
 					))}
