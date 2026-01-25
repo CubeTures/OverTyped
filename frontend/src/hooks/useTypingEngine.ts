@@ -1,4 +1,6 @@
 import { getElementSize } from "@/lib/sizingt";
+import { getTypedCharacter as getTypedCharacters } from "@/lib/typedCharacter";
+import { usePage } from "@/PageProvider";
 import { useState, type RefObject } from "react";
 
 export type WordStatus = "pending" | "correct" | "incorrect";
@@ -9,6 +11,7 @@ export function useTypingEngine(
 	container: RefObject<HTMLDivElement | null>,
 	charSize: number
 ) {
+	const { socket } = usePage();
 	const [currentWord, setCurrentWord] = useState(0);
 	const [input, setInput] = useState("");
 	const [typedWords, setTypedWords] = useState(
@@ -22,28 +25,17 @@ export function useTypingEngine(
 		const caretPos = getElementSize(caret)!.x;
 		const maxSize = getElementSize(container)!.width;
 
-		// if at max capacity, only ignore if the next letter is correct or a space
-		if (caretPos + charSize >= maxSize) {
-			// console.log(
-			// 	`${caretPos} + ${charSize} (${caretPos + charSize}) >= ${maxSize}`
-			// );
-			if (value.length <= input.length) {
-				// console.log("backspace");
-				// backspace
-			} else if (value.length <= expected.length) {
-				// console.log("still typing");
-				// still typing correctly
-			} else if (
-				value.startsWith(expected) &&
-				value.length === expected.length + 1 &&
-				value[value.length - 1] === " "
-			) {
-				// console.log("submission");
-				// submission
-			} else {
-				// console.log("don't wrap");
-				return; // don't wrap div
-			}
+		const isSubmission =
+			value.startsWith(expected) &&
+			value.length === expected.length + 1 &&
+			value[value.length - 1] === " ";
+		const isBackspace = value.length <= input.length;
+		const isStillTyping = value.length <= expected.length;
+		if (
+			caretPos + charSize >= maxSize &&
+			!(isBackspace || isSubmission || isStillTyping)
+		) {
+			return; // don't wrap div
 		}
 
 		let incorrect = 0;
@@ -61,6 +53,9 @@ export function useTypingEngine(
 			return; // can't type any more
 		}
 
+		const sendChars = getTypedCharacters(value, input, expected);
+		sendChars?.map((char) => socket.sendSubmit(char));
+
 		if (value.endsWith(" ") && typed === expected) {
 			setTypedWords((prev) => {
 				const next = [...prev];
@@ -71,6 +66,7 @@ export function useTypingEngine(
 				return next;
 			});
 
+			socket.sendSubmit(" ");
 			setCurrentWord((w) => w + 1);
 			setInput("");
 			return;
