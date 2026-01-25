@@ -82,6 +82,7 @@ function connect(
 		socket.event.onPlayerFinished((m: PlayerFinished) => {
 			setPlayers((i) => {
 				i[m.id].finished = true;
+				i[m.id].place = m.place;
 				return { ...i };
 			});
 		});

@@ -74,6 +74,7 @@ export type Player = {
 	name: string;
 	statusEffects: StatusEffectId[];
 	finished: boolean;
+	place: number;
 	progress: number;
 	wpm: number;
 };
@@ -219,6 +220,7 @@ function parsePlayer(view: DataView, offset: number): [Player, number] {
 			name,
 			statusEffects: [],
 			finished: false,
+			place: 0,
 			progress: 0,
 			wpm: 0,
 		},
