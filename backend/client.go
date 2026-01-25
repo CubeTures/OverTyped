@@ -161,6 +161,12 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 					continue
 				}
 				usedPowerups[pid] = true
+				if pid == byte(PowerupRearViewMirror) {
+					c.log("received rear view mirror")
+					statusEffects[pid] = true
+					continue
+				}
+				c.log("send status effect to %d", msg.Affected)
 				c.lobbyRead <- ClientLobbyApplyStatusEffect{
 					affectedClientId: msg.Affected,
 					powerupId:        msg.PowerupID,
@@ -206,6 +212,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 		case msg := <-c.lobbyMsgWrite:
 			switch msg := msg.(type) {
 			case LobbyClientApplyStatusEffect:
+				c.log("Recieved power up %d", msg.powerupId)
 				if statusEffects[PowerupRearViewMirror] {
 					c.lobbyRead <- ClientLobbyApplyStatusEffect{
 						affectedClientId: msg.fromClientId,
