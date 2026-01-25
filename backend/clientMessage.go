@@ -140,6 +140,9 @@ func ParseClientMessage(buf []byte) (ClientMessage, error) {
 	case OpcodeSkipWait:
 		msg = &SkipWaitMessage{}
 
+	case OpcodeSelectPowerups:
+		msg = &SelectPowerupsMessage{}
+
 	default:
 		return nil, fmt.Errorf("unknown client opcode: %d", op)
 	}
