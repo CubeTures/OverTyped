@@ -14,11 +14,12 @@ interface Light {
 	alpha?: number;
 }
 
-let lastEyeLoc: glm.vec3 = [0.0, 4, 8.5];
-let lastCenterLoc: glm.vec3 = [0.0, 0.0, 0.0];
-let lastLocalUpVal: glm.vec3 = [0.0, 1.0, 0.0];
-let prevCubeRotation: number = 0.0;
-let stage = 0;
+let lastEyeLoc:glm.vec3 = [0.0, 4, 8.5];
+let lastCenterLoc:glm.vec3 = [0.0, 0.0, 0.0];
+let lastLocalUpVal:glm.vec3 = [0.0, 1.0, 0.0];
+let prevCubeRotation:number = 0.0 // only update sometimes
+let prevCubeRotationAlways:number = 0.0 // updated every iteration
+let stage = 0
 
 // actual values
 let actualProgress = [0, 0, 0];
@@ -97,6 +98,9 @@ function drawScene(
 			continue;
 
 		let curr = actors[i];
+		if(curr.type === "Wheel")
+			continue
+
 		// Sending model and normal matrices
 		const normalMatrix = glm.mat4.create();
 		glm.mat4.invert(normalMatrix, curr.modelMatrix ?? glm.mat4.create());
@@ -136,7 +140,26 @@ function drawScene(
 			const offset = 0;
 			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
 		}
+
+		// Drawing wheels on cars
+		if(curr.type==="Car")
+		{
+			let wheelActor:Actor;
+			for(let j=0; j<actors.length; j++)
+			{
+				if(actors[j].type == "Wheel")
+				{
+					wheelActor = actors[j]
+					//SETTING -> can change wheel speed here
+					const wheel_speedup = 10.0;
+					drawCarWheels(gl, programInfo, wheelActor, curr.modelMatrix ?? glm.mat4.create(), cubeRotation, wheel_speedup)
+					break;
+				}
+			}
+		}
 	}
+
+	prevCubeRotationAlways = cubeRotation
 }
 
 const progressMult = 700
@@ -298,6 +321,64 @@ function createViewMatrix(
 	const viewMatrix = glm.mat4.create();
 	return [glm.mat4.lookAt(viewMatrix, eye, center, localUp), eye];
 }
+
+function drawCarWheels(gl: WebGLRenderingContext, programInfo: ProgramInfo, wheelActor:Actor, carModelMatrix:glm.mat4, cubeRotation:number, wheel_speedup:number) {
+	console.log("here")
+	// These Attributes are the same for all wheels
+	setPositionAttribute(gl, wheelActor.buffers, programInfo);
+	setTextureAttribute(gl, wheelActor.buffers, programInfo);
+	setNormalAttribute(gl, wheelActor.buffers, programInfo);
+	setMaterialIndexAttribute(gl, wheelActor.buffers, programInfo);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wheelActor.buffers.indices); // Tell WebGL which indices to use to index the vertices
+	
+	// Texture is same for all wheels
+	if (wheelActor.texture != undefined) {
+		// Tell WebGL we want to affect texture unit 0
+		gl.activeTexture(gl.TEXTURE0);
+		// Bind the texture to texture unit 0
+		gl.bindTexture(gl.TEXTURE_2D, wheelActor.texture);
+		// Tell the shader we bound the texture to texture unit 0
+		gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+	}
+
+	let delta = cubeRotation*wheel_speedup;
+
+	for(let i=0; i<4; i++) // Cars have 4 wheels
+	{
+		wheelActor.modelMatrix = glm.mat4.clone(carModelMatrix)
+		console.log(wheelActor)
+		
+		glm.mat4.translate(wheelActor.modelMatrix, wheelActor.modelMatrix, [0.80 * (i%2==0?-1:1), 0.35, 1.15 * (i<2?-1:1)]);
+		glm.mat4.rotate(wheelActor.modelMatrix, wheelActor.modelMatrix, delta, [1, 0, 0]);
+		if(i%2==1)
+			glm.mat4.rotate(wheelActor.modelMatrix, wheelActor.modelMatrix, toRadian(180), [0, 1, 0]);
+
+		const normalMatrix = glm.mat4.create();
+		glm.mat4.invert(normalMatrix, wheelActor.modelMatrix ?? glm.mat4.create());
+		glm.mat4.transpose(normalMatrix, normalMatrix);
+		gl.uniformMatrix4fv(
+			programInfo.uniformLocations.modelMatrix,
+			false,
+			wheelActor.modelMatrix ?? glm.mat4.create()
+		);
+		gl.uniformMatrix4fv(
+			programInfo.uniformLocations.normalMatrix,
+			false,
+			normalMatrix
+		);
+
+		//Drawing
+		{
+			const vertexCount = wheelActor.buffers.indices.numItems;
+			const type = gl.UNSIGNED_SHORT;
+			const offset = 0;
+			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
+		}
+	}
+
+}
+
+
 
 //SETTING -> location of lights
 function sendLights(gl: WebGLRenderingContext, programInfo: ProgramInfo) {

@@ -28,6 +28,7 @@ interface Actor {
 	modelMatrix?: glm.mat4;
 	overrideTextureName?: string;
 	overrideNoTextureColor?: glm.vec3;
+	type:string;
 }
 
 async function main(canvas: HTMLCanvasElement) {
@@ -118,7 +119,7 @@ async function main(canvas: HTMLCanvasElement) {
 	// Creating buffers for each object want
 	const carBuffers: InitBufferReturn | undefined = await initBuffers(
 		gl,
-		"car.obj",
+		"car_no_wheels.obj",
 		"FREE_CAR_01.mtl"
 	);
 	const cubeBuffers: InitBufferReturn | undefined = await initBuffers(
@@ -126,19 +127,25 @@ async function main(canvas: HTMLCanvasElement) {
 		"cube.obj",
 		"Floor.mtl"
 	);
-	if (carBuffers === undefined || cubeBuffers === undefined) {
+	const wheelBuffer: InitBufferReturn | undefined = await initBuffers(
+		gl,
+		"wheel.obj",
+		"FREE_CAR_01.mtl"
+	);
+	if (carBuffers === undefined || cubeBuffers === undefined || wheelBuffer === undefined) {
 		alert("Buffers were not intialized!!!!!!!!!!!!11!!!!1");
 		return;
 	}
 
 	var actors: Actor[] = [];
-	actors.push({ buffers: carBuffers });
-	actors.push({ buffers: carBuffers });
+	actors.push({ buffers: carBuffers, type:"Car" });
+	actors.push({ buffers: carBuffers, type:"Car" });
 	actors[1].overrideTextureName = "002_COLOR_BASIC.png";
-	actors.push({ buffers: cubeBuffers });
+	actors.push({ buffers: cubeBuffers,type:"Wall" });
 	actors[2].overrideNoTextureColor = [10, 10, 10, 255];
-	actors.push({ buffers: carBuffers });
-	actors.push({ buffers: carBuffers });
+	actors.push({ buffers: carBuffers, type:"Car" });
+	actors.push({ buffers: carBuffers, type:"Car" });
+	actors.push({buffers: wheelBuffer, type:"Wheel"});
 
 	// Load texture based on the value in map_Kd. No texture defaults to blue
 	actors.forEach((actor) => {
