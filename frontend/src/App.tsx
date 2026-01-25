@@ -33,7 +33,7 @@ function App() {
 
 	return (
 		<div className="w-dvw h-dvh flex flex-col">
-			<canvas  width="640" height="480"
+			<canvas  width="1920" height="1080"
 				ref={canvasRef}
 				className={`bg-primary/20 transition-all duration-1000 ease-in-out place-self-center w-dvw ${ready ? "h-[60dvh]" : "h-dvh"}`}
 				onTransitionEnd={() => setAnimationEnd(true)}
