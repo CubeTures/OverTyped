@@ -344,6 +344,9 @@ function createViewMatrix(
 		localUp = [
 			-0.12335341423749924, 0.9863846302032471, 0.10876214504241943,
 		];
+
+        eye[1] += 0.02 * Math.sin(0.40 * cubeRotation)
+        center[1] += 0.02 * Math.sin(0.40 * cubeRotation)
 	}
 
 	const viewMatrix = glm.mat4.create();
