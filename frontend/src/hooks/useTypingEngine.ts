@@ -53,8 +53,8 @@ export function useTypingEngine(
 			return; // can't type any more
 		}
 
-		const sendChars = getTypedCharacters(value, input, expected);
-		sendChars?.map((char) => socket.sendSubmit(char));
+		// const sendChars = getTypedCharacters(value, input, expected);
+		// sendChars?.map((char) => socket.sendSubmit(char));
 
 		if (value.endsWith(" ") && typed === expected) {
 			setTypedWords((prev) => {
@@ -66,7 +66,7 @@ export function useTypingEngine(
 				return next;
 			});
 
-			socket.sendSubmit(" ");
+			socket.sendSubmit(currentWord);
 			setCurrentWord((w) => w + 1);
 			setInput("");
 			return;
