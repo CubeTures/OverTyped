@@ -1,13 +1,19 @@
-import { usePage } from "@/PageProvider";
+import { CurrentPage, usePage } from "@/PageProvider";
 import Typing from "../typing/Typing";
+import LobbyList from "../lobby/LobbyList";
 
 function GamePage() {
-	const { words } = usePage();
+	const { page, words } = usePage();
 
 	return (
-		<div className="w-full h-full flex justify-center items-center">
-			<Typing words={words.slice(0, 30)} />
-		</div>
+		<>
+			<LobbyList />
+			{page === CurrentPage.Game ? (
+				<Typing words={words.slice(0, 30)} />
+			) : (
+				<div className="w-full grow">Loading Lobby</div>
+			)}
+		</>
 	);
 }
 

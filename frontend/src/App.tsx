@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import GamePage from "./components/pages/GamePage";
 import TitlePage from "./components/pages/TitlePage";
 import { CurrentPage, usePage } from "./PageProvider";
 import { useEnter } from "./hooks/useEnter";
+import { main } from "./lib/render-start";
 
 function App() {
 	const { page } = usePage();
 	const [ready, setReady] = useState(false);
 	const [animationEnd, setAnimationEnd] = useState(false);
+	const canvasRef = useRef<HTMLCanvasElement>(null);
 
 	function currentPage() {
 		if (ready && animationEnd) {
@@ -23,9 +25,16 @@ function App() {
 		setReady(true);
 	});
 
+	useEffect(() => {
+		if (canvasRef.current !== null) {
+			main(canvasRef.current);
+		}
+	}, [canvasRef]);
+
 	return (
 		<div className="w-dvw h-dvh flex flex-col">
 			<canvas
+				ref={canvasRef}
 				className={`bg-primary/20 transition-all duration-1000 ease-in-out place-self-center w-dvw ${ready ? "h-[60dvh]" : "h-dvh"}`}
 				onTransitionEnd={() => setAnimationEnd(true)}
 			></canvas>

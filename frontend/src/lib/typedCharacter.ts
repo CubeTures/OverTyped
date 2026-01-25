@@ -1,4 +1,4 @@
-const BACKSPACE = "\x08";
+const BACKSPACE = "\b";
 
 export function getTypedCharacter(
 	value: string,

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 export function useEnter(callback: () => void) {
-    function begin() {
+	function begin() {
 		document.addEventListener("keydown", (e) => {
 			if (e.code === "Enter") {
 				callback();

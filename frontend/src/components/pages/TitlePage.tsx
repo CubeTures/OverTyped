@@ -13,8 +13,15 @@ function TitlePage() {
 		}
 	};
 
+	function refocus() {
+		inputRef.current?.focus();
+	}
+
 	return (
-		<div className="w-full h-full flex flex-col justify-center items-center gap-4">
+		<button
+			className="w-full h-full flex flex-col justify-center items-center gap-4"
+			onClick={refocus}
+		>
 			<FadeTypewriter
 				className="text-xl"
 				text="What do they call you?"
@@ -28,7 +35,7 @@ function TitlePage() {
 				onChange={(e) => setTempName(e.target.value)}
 				onKeyDown={handleKeyDown}
 			></input>
-		</div>
+		</button>
 	);
 }
 
