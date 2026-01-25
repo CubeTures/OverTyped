@@ -7,8 +7,13 @@ import { usePage } from "@/PageProvider";
 import { POWERUP_INFO } from "@/lib/powerups";
 import { getTargetPlayer } from "@/lib/target";
 import type { PowerupId } from "@/lib/comm";
+import first from "@/assets/first.svg";
+import last from "@/assets/last.svg";
+import close from "@/assets/close.svg";
+import updown from "@/assets/up-down.svg";
+import leftright from "@/assets/left-right.svg";
 
-const targets = ["first", "last", "closest"] as const;
+const targets = { first: first, last: last, closest: close } as const;
 
 interface Props {
 	words: string[];
@@ -68,7 +73,7 @@ export default function Typing({ words }: Props) {
 
 				case "ArrowUp":
 					setSelectedTarget((t) =>
-						Math.min(t + 1, targets.length - 1)
+						Math.min(t + 1, Object.keys(targets).length - 1)
 					);
 					break;
 
@@ -88,7 +93,7 @@ export default function Typing({ words }: Props) {
 					const target = getTargetPlayer(
 						Object.values(players),
 						currentPlayer,
-						targets[targetIndex]
+						Object.keys(targets)[targetIndex] as any
 					);
 
 					if (target === undefined) return;
@@ -162,14 +167,26 @@ export default function Typing({ words }: Props) {
 						</div>
 					))}
 				</div>
-				<div className="h-[60%] mx-10 w-2 bg-background rounded-lg"></div>
+				<img
+					src={leftright}
+					className="size-5 ml-6"
+				/>
+				<div className="h-[60%] mx-2 w-2 bg-background rounded-lg"></div>
+				<img
+					src={updown}
+					className="size-5 mr-6"
+				/>
 				<div className="flex gap-10">
-					{targets.map((t, i) => (
+					{Object.entries(targets).map(([t, ico], i) => (
 						<div
 							key={i}
-							className={`transition-colors hover:text-foreground cursor-pointer ${selectedTarget === i ? "text-foreground" : ""}`}
+							className={`transition-colors text-foreground hover:text-foreground hover:brightness-100 cursor-pointer flex items-center text-nowrap gap-1 ${selectedTarget === i ? "brightness-100" : "brightness-50"}`}
 							onClick={() => setSelectedTarget(i)}
 						>
+							<img
+								src={ico}
+								className="size-5"
+							/>
 							{t}
 						</div>
 					))}

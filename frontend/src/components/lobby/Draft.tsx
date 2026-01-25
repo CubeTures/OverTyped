@@ -41,12 +41,17 @@ const card: Variants = {
 	},
 };
 
-function Draft() {
+function Draft({
+	draftOver,
+	setDraftOver,
+}: {
+	draftOver: boolean;
+	setDraftOver: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
 	const { powerups, setPowerups } = usePage();
 
 	const [choices] = useState<PowerupId[]>([...powerups]);
 	const [chosen, setChosen] = useState<PowerupId[]>([]);
-	const [past, setPast] = useState(false);
 
 	const chosenRef = useRef<PowerupId[]>([]);
 	const done = chosen.length === 2;
@@ -59,7 +64,7 @@ function Draft() {
 	function selectPowerup(id: PowerupId) {
 		if (chosen.length === 1) {
 			setPowerups([...chosen, id]);
-			setTimeout(() => setPast(true), 1500);
+			setTimeout(() => setDraftOver(true), 1500);
 		}
 
 		setChosen((prev) => prev.concat(id));
@@ -78,7 +83,7 @@ function Draft() {
 	}, []);
 
 	return (
-		<div className="w-full h-full grow flex flex-col gap-4 pt-4">
+		<div className="w-full h-full grow flex flex-col gap-4 pt-4 z-10">
 			<h2
 				className={`
 					w-full text-center text-3xl
@@ -97,7 +102,7 @@ function Draft() {
 			>
 				{choices.map((pow) => {
 					const isChosen = chosen.includes(pow);
-					const fadeAway = (done && !isChosen) || past;
+					const fadeAway = (done && !isChosen) || draftOver;
 
 					return (
 						<motion.div

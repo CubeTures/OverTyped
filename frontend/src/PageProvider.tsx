@@ -42,6 +42,7 @@ type PageContextType = {
 	name: string;
 	setName: React.Dispatch<React.SetStateAction<string>>;
 	words: string[];
+	time: number;
 	powerups: PowerupId[];
 	setPowerups: React.Dispatch<React.SetStateAction<PowerupId[]>>;
 	purchaseSuccess: PurchaseSuccess;
@@ -53,6 +54,7 @@ function connect(
 	setSocket: React.Dispatch<React.SetStateAction<Socket>>,
 	setPlayers: React.Dispatch<React.SetStateAction<PlayerMap>>,
 	setWords: React.Dispatch<React.SetStateAction<string[]>>,
+	setTime: React.Dispatch<React.SetStateAction<number>>,
 	setPage: React.Dispatch<React.SetStateAction<CurrentPage>>,
 	setPurchaseSuccess: React.Dispatch<React.SetStateAction<PurchaseSuccess>>,
 	setCurrentPlayer: React.Dispatch<React.SetStateAction<number>>,
@@ -70,6 +72,7 @@ function connect(
 				}, pm)
 			);
 			setWords(m.words);
+			setTime(m.timeLeft);
 			setPage(CurrentPage.Lobby);
 			setCurrentPlayer(m.playerId);
 			setPowerups(m.powerups);
@@ -126,6 +129,7 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 	const [socket, setSocket] = useState(null as any);
 	const [players, setPlayers] = useState({} as PlayerMap);
 	const [words, setWords] = useState([] as string[]);
+	const [time, setTime] = useState(0);
 	const [name, setName] = useState("");
 	const [purchaseSuccess, setPurchaseSucces] = useState(
 		{} as PurchaseSuccess
@@ -142,6 +146,7 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 			setSocket,
 			setPlayers,
 			setWords,
+			setTime,
 			setPage,
 			setPurchaseSucces,
 			setCurrentPlayer,
@@ -175,6 +180,7 @@ export function PageProvider({ children }: { children: React.ReactNode }) {
 				name,
 				setName,
 				words,
+				time,
 				purchaseSuccess,
 				powerups,
 				setPowerups,
