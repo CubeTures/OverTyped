@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 )
 
@@ -46,7 +48,7 @@ func (m *RegisterMessage) UnmarshalBinary(data []byte) error {
 
 // ---- Submission of a letter (Opcode 1) ----
 type SubmissionMessage struct {
-	Answer byte
+	Answer uint32
 }
 
 func (m *SubmissionMessage) Opcode() Opcode {
@@ -58,7 +60,7 @@ func (m *SubmissionMessage) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("submission: expected 1 byte, got %d", len(data))
 	}
 
-	m.Answer = data[0]
+	binary.Read(bytes.NewReader(data), binary.BigEndian, &m.Answer)
 	return nil
 }
 

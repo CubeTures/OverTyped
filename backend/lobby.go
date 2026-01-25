@@ -137,6 +137,7 @@ startGameLoop:
 			case ClientLobbyApplyStatusEffect:
 				l.clients[msg.affectedClientId].lobbyMsgWrite <- LobbyClientApplyStatusEffect{
 					powerupId: msg.powerupId,
+					fromClientId: msg.fromClientId,
 				}
 
 			case ClientLobbyStatusChanged:

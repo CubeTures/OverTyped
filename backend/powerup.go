@@ -17,4 +17,11 @@ const (
 	fogDuration            = 10
 	tireBootDuration       = 10
 	rearViewMirrorDuration = 10
+
+	spikeStripWordsAdded = 5
+	wordsScrambled       = 10
+	wordsIced            = 10
+	wordsStickShifted    = 10
+
+	powerupOffset = 3
 )

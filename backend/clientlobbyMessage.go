@@ -23,6 +23,7 @@ type ClientLobbyFinished struct {
 func (ClientLobbyFinished) clientLobbyMessage() {}
 
 type ClientLobbyApplyStatusEffect struct {
+	fromClientId     byte
 	affectedClientId byte
 	powerupId        byte
 }
@@ -41,7 +42,8 @@ type LobbyClientMessage interface {
 }
 
 type LobbyClientApplyStatusEffect struct {
-	powerupId byte
+	fromClientId byte
+	powerupId    byte
 }
 
 func (LobbyClientApplyStatusEffect) lobbyClientMessage() {}

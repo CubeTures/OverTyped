@@ -108,11 +108,10 @@ func (c *Client) writePump() {
 }
 
 func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
-	waitingForSpace := false
+	c.log("started state Handler")
 
 	// typing state
-	wordlistIdx := 0     // index into word list
-	wordIdx := 0 // index into current word
+	idx := 0
 
 	// status effect states
 	var (
@@ -120,6 +119,9 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 		usedPowerups     [PowerupCount]bool
 		statusEffects    [PowerupCount]bool
 		powerupsSelected bool = false
+
+		// status effect counters
+		wordsLeft [PowerupCount]int
 	)
 
 	// status effect timers
@@ -156,44 +158,35 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 				c.lobbyRead <- ClientLobbyApplyStatusEffect{
 					affectedClientId: msg.Affected,
 					powerupId:        msg.PowerupID,
+					fromClientId:     c.id,
 				}
 
 			case *SubmissionMessage:
-				answerCharacter := msg.Answer
-
-				if answerCharacter == '\b' && wordIdx > 0 {
-					wordIdx--
-					continue
-				}
-
-				if waitingForSpace {
-					if answerCharacter == ' ' {
-						wordIdx = 0
-						wordlistIdx++
-						c.lobbyRead <- ClientLobbyProgressUpdate{
-							clientId: c.id,
-							idx:      wordlistIdx,
-						}
-						waitingForSpace = false
-					}
-					continue
-				}
-
-				// correct letter
-				if answerCharacter == c.words[wordlistIdx][wordIdx] {
-					wordIdx++
-
-					// finished test
-					if wordIdx == len(c.words[wordlistIdx]) && wordlistIdx == len(c.words) {
-						c.lobbyRead <- ClientLobbyFinished{
-							clientId: c.id,
-						}
-						continue
+				if msg.Answer == uint32(idx) {
+					idx++
+					c.lobbyRead <- ClientLobbyProgressUpdate{
+						clientId: c.id,
+						idx:      idx,
 					}
 
-					// finished word
-					if wordIdx == len(c.words[wordlistIdx]) {
-						waitingForSpace = true
+					for statusEffect := range wordsLeft {
+						if wordsLeft[statusEffect] == 0 {
+							continue
+						}
+						wordsLeft[statusEffect]--
+						if wordsLeft[statusEffect] == 0 {
+							statusEffects[statusEffect] = false
+							c.lobbyRead <- ClientLobbyStatusChanged{
+								clientId:   c.id,
+								powerupIds: getPowerups(statusEffects),
+							}
+						}
+					}
+				}
+
+				if idx == len(c.words) {
+					c.lobbyRead <- ClientLobbyFinished{
+						clientId: c.id,
 					}
 				}
 			}
@@ -201,6 +194,23 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 		case msg := <-c.lobbyMsgWrite:
 			switch msg := msg.(type) {
 			case LobbyClientApplyStatusEffect:
+				if statusEffects[PowerupRearViewMirror] {
+					c.lobbyRead <- ClientLobbyApplyStatusEffect{
+						affectedClientId: msg.fromClientId,
+						powerupId:        msg.powerupId,
+						fromClientId:     c.id,
+					}
+					statusEffects[PowerupRearViewMirror] = false
+					c.lobbyRead <- ClientLobbyStatusChanged{
+						clientId:   c.id,
+						powerupIds: getPowerups(statusEffects),
+					}
+
+					rearViewMirrorTimer.Stop()
+					<-rearViewMirrorTimer.C // drain
+
+					continue
+				}
 				statusEffects[msg.powerupId] = true
 				c.lobbyRead <- ClientLobbyStatusChanged{
 					clientId:   c.id,
@@ -213,13 +223,43 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 				case PowerupFog:
 					fogTimer.Stop()
 					fogTimer.Reset(fogDuration * time.Second)
+
 				case PowerupIcyRoads:
+					c.words = RepeatCharsRange(c.words, powerupOffset, wordsIced)
+					c.lobbyWrite <- UpdateWordsMessage{
+						idx:   uint32(idx + 1),
+						words: c.words,
+					}
+					wordsLeft[PowerupIcyRoads] = wordsIced
+
 				case PowerupRearViewMirror:
 					rearViewMirrorTimer.Stop()
 					rearViewMirrorTimer.Reset(rearViewMirrorDuration * time.Second)
+
 				case PowerupScrambler:
+					c.words = ScrambleRange(c.words, powerupOffset, wordsScrambled)
+					c.lobbyWrite <- UpdateWordsMessage{
+						idx:   uint32(idx + 1),
+						words: c.words,
+					}
+					wordsLeft[PowerupScrambler] = wordsScrambled
+
 				case PowerupSpikeStrip:
+					c.words = append(c.words, RandomWords(wordsEnglish, spikeStripWordsAdded)...)
+					c.lobbyWrite <- UpdateWordsMessage{
+						idx:   uint32(idx + 1),
+						words: c.words,
+					}
+					wordsLeft[PowerupSpikeStrip] = spikeStripWordsAdded
+
 				case PowerupStickShift:
+					c.words = ObfuscateRange(c.words, powerupOffset, wordsStickShifted)
+					c.lobbyWrite <- UpdateWordsMessage{
+						idx:   uint32(idx + 1),
+						words: c.words,
+					}
+					wordsLeft[PowerupStickShift] = wordsStickShifted
+
 				case PowerupTireBoot:
 					tireBootTimer.Stop()
 					tireBootTimer.Reset(tireBootDuration * time.Second)
@@ -246,6 +286,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 			}
 
 		case <-done:
+			c.log("closing state handler")
 			return
 		}
 	}
