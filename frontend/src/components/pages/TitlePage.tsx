@@ -49,6 +49,7 @@ function TitlePage() {
 				value={tempName}
 				onChange={(e) => setTempName(e.target.value)}
 				onKeyDown={handleKeyDown}
+				maxLength={15}
 			></input>
 		</button>
 	);

@@ -73,7 +73,8 @@ export function useTypingEngine(
 		// const sendChars = getTypedCharacters(value, input, expected);
 		// sendChars?.map((char) => socket.sendSubmit(char));
 
-		if (value.endsWith(" ") && typed === expected) {
+		const isLastWord = currentWord === words.length - 1;
+		if ((value.endsWith(" ") && typed === expected) || (isLastWord && typed === expected && value === expected)) {
 			setTypedWords((prev) => {
 				const next = [...prev];
 				next[currentWord] = {

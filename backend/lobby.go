@@ -14,7 +14,7 @@ const LobbyWait uint16 = 25
 const DisplayedPowerupCount = 4
 const AllowedPowerupCount = 2
 
-const WordCount = 80
+const WordCount = 50
 
 type Lobby struct {
 	id         int
@@ -133,7 +133,7 @@ startGameLoop:
 			case ClientLobbyFinished:
 				l.broadcast(PlayerFinishedMessage{
 					PlayerID:  msg.clientId,
-					Placement: byte(activePlayers),
+					Placement: byte(len(l.clients) - activePlayers + 1),
 				})
 				activePlayers--
 

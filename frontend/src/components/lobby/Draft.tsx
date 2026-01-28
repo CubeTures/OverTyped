@@ -91,7 +91,7 @@ function Draft({
 					${done ? "opacity-0 pointer-events-none" : "opacity-100"}
 				`}
 			>
-				Select 2
+				Select 2 Powerups
 			</h2>
 
 			<motion.div

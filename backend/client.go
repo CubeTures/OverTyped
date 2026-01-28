@@ -118,6 +118,7 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 
 	// typing state
 	idx := 0
+	charsTyped := 0
 
 	// status effect states
 	var (
@@ -178,11 +179,23 @@ func (c *Client) stateHandler(done chan struct{}, msgs chan ClientMessage) {
 
 			case *SubmissionMessage:
 				if msg.Answer == uint32(idx) {
+					// Track characters typed incrementally
+					if idx < len(c.words) {
+						charsTyped += len(c.words[idx])
+						// Add space after word (except for the last word)
+						if idx < len(c.words)-1 {
+							charsTyped++
+						}
+					}
 					idx++
 
 					secSpentRacing := float32(time.Since(c.raceStart)) / float32(time.Second)
-					wordsCompleted := countCharsWithSpaces(wordsEnglish, idx) / 5
-					wpm := 60 * float32(wordsCompleted) / secSpentRacing
+					// Avoid division by zero
+					if secSpentRacing <= 0 {
+						secSpentRacing = 0.001 // Use a small value to avoid division by zero
+					}
+					wordsCompleted := float32(charsTyped) / 5.0
+					wpm := 60 * wordsCompleted / secSpentRacing
 
 					c.lobbyRead <- ClientLobbyProgressUpdate{
 						clientId: c.id,
