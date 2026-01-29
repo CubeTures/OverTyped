@@ -222,8 +222,9 @@ export default function Typing({ words }: Props) {
 				/>
 
 				<div
-					className="absolute w-0.75 h-(--text-4xl) bg-primary rounded-full pointer-events-none transition-all top-10 left-0"
+					className="absolute w-0.75 h-(--text-4xl) bg-primary rounded-full pointer-events-none will-change-transform transition-transform duration-75 ease-linear"
 					ref={caretRef}
+					style={{ transform: "translate(0, 0)" }}
 				/>
 			</div>
 		</button>

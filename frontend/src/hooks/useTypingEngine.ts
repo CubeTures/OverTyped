@@ -1,7 +1,7 @@
 import { getElementSize } from "@/lib/sizingt";
 import { getTypedCharacter as getTypedCharacters } from "@/lib/typedCharacter";
 import { usePage } from "@/PageProvider";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 export type WordStatus = "pending" | "correct" | "incorrect";
 
@@ -35,24 +35,34 @@ export function useTypingEngine(
 		return;
 	}, [words]);
 
+	// Cache container width to avoid repeated DOM measurements
+	const containerWidthRef = useRef<number | null>(null);
+
 	const handleInput = (value: string) => {
 		const typed = value.trim();
 		const expected = words[currentWord];
 
-		const caretPos = getElementSize(caret)!.x;
-		const maxSize = getElementSize(container)!.width;
-
+		// Only measure if we need to check wrapping
 		const isSubmission =
 			value.startsWith(expected) &&
 			value.length === expected.length + 1 &&
 			value[value.length - 1] === " ";
 		const isBackspace = value.length <= input.length;
 		const isStillTyping = value.length <= expected.length;
-		if (
-			caretPos + charSize >= maxSize &&
-			!(isBackspace || isSubmission || isStillTyping)
-		) {
-			return; // don't wrap div
+
+		// Check wrapping only when necessary
+		if (!(isBackspace || isSubmission || isStillTyping)) {
+			// Cache container width - only recalculate if container might have resized
+			if (containerWidthRef.current === null && container.current) {
+				containerWidthRef.current = container.current.getBoundingClientRect().width;
+			}
+			const maxSize = containerWidthRef.current ?? 0;
+
+			// Only measure caret position if we need to check wrapping
+			const caretPos = getElementSize(caret)?.x ?? 0;
+			if (caretPos + charSize >= maxSize) {
+				return; // don't wrap div
+			}
 		}
 
 		let incorrect = 0;
